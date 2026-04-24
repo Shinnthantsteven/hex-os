@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HEX OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #00ffcc;
+    --accent-dim: rgba(0,255,204,0.15);
+    --accent-border: rgba(0,255,204,0.35);
+    --bg: #07070f;
+    --bg2: #0d0d1a;
+    --bg3: #12121f;
+    --text: #e0e0f0;
+    --text-dim: #6e6e8a;
+    --red: #ff4d6d;
+    --amber: #ffb830;
+    --green: #00ffcc;
+    --border: rgba(255,255,255,0.07);
+    --radius: 12px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(7,7,15,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,255,204,0.5);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .clock {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .date-display {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── GRID LAYOUT ── */
+  main {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .icon { font-size: 14px; opacity: 0.7; }
+
+  /* ── YEAR PROGRESS ── */
+  .year-card { grid-column: span 12; }
+
+  .year-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .year-label { font-size: 12px; color: var(--text-dim); }
+
+  .year-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--accent);
+    text-shadow: 0 0 16px rgba(0,255,204,0.4);
+    line-height: 1;
+  }
+
+  .year-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .year-stat { font-size: 11px; color: var(--text-dim); }
+  .year-stat span { color: var(--text); font-weight: 500; }
+
+  .progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--bg3);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #00b894, var(--accent));
+    box-shadow: 0 0 12px rgba(0,255,204,0.5);
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── CALENDAR ── */
+  .calendar-card { grid-column: span 6; }
+
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .cal-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-icon {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+  .cal-month {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--text);
+    min-width: 140px;
+    text-align: center;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .cal-day-label {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 4px 0;
+    letter-spacing: 1px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    position: relative;
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .cal-day:hover { background: var(--bg3); border-color: var(--accent-border); }
+
+  .cal-day.today {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .cal-day.other-month { color: var(--text-dim); opacity: 0.4; }
+
+  .cal-day.has-event::after {
+    content: '';
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 3px;
+  }
+
+  .cal-events {
+    margin-top: 14px;
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cal-event-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .cal-event-date {
+    color: var(--accent);
+    font-size: 10px;
+    min-width: 60px;
+  }
+
+  .cal-event-name { flex: 1; padding: 0 8px; }
+
+  .add-event-form {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ── TO-DO ── */
+  .todo-card { grid-column: span 6; }
+
+  .todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 4px;
+  }
+
+  .filter-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: all 0.2s;
+  }
+
+  .todo-item:hover { border-color: var(--accent-border); }
+
+  .todo-item.done { opacity: 0.4; }
+  .todo-item.done .todo-text { text-decoration: line-through; }
+
+  .todo-check {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .todo-item.done .todo-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .todo-check::after { content: '✓'; font-size: 10px; color: var(--bg); opacity: 0; }
+  .todo-item.done .todo-check::after { opacity: 1; }
+
+  .todo-text { flex: 1; font-size: 12px; }
+
+  .priority-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 1px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .priority-badge.high { background: rgba(255,77,109,0.2); color: var(--red); border: 1px solid rgba(255,77,109,0.4); }
+  .priority-badge.mid  { background: rgba(255,184,48,0.2); color: var(--amber); border: 1px solid rgba(255,184,48,0.4); }
+  .priority-badge.low  { background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent-border); }
+
+  .todo-add-form {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ── SPENDING ── */
+  .spending-card { grid-column: span 6; }
+
+  .spending-month {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .spending-total {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--accent);
+  }
+
+  .spend-categories { display: flex; flex-direction: column; gap: 10px; }
+
+  .spend-row { display: flex; flex-direction: column; gap: 4px; }
+
+  .spend-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  .spend-cat-name { color: var(--text-dim); letter-spacing: 1px; }
+  .spend-cat-amount { color: var(--text); }
+
+  .spend-bar-track {
+    height: 5px;
+    background: var(--bg3);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .spend-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #00b894, var(--accent));
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+
+  .spend-add-form {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .spend-month-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── SUBSCRIPTIONS ── */
+  .subs-card { grid-column: span 6; }
+
+  .subs-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+
+  .sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .sub-item:hover { border-color: var(--accent-border); }
+
+  .sub-left { display: flex; flex-direction: column; gap: 3px; }
+  .sub-name { font-size: 13px; }
+  .sub-meta { font-size: 10px; color: var(--text-dim); }
+
+  .sub-right { display: flex; align-items: center; gap: 12px; }
+
+  .sub-days {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    line-height: 1;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .sub-days.red { color: var(--red); text-shadow: 0 0 8px rgba(255,77,109,0.4); }
+  .sub-days.amber { color: var(--amber); text-shadow: 0 0 8px rgba(255,184,48,0.4); }
+  .sub-days.green { color: var(--green); text-shadow: 0 0 8px rgba(0,255,204,0.3); }
+
+  .sub-days-label { font-size: 9px; color: var(--text-dim); text-align: right; line-height: 1.2; }
+
+  .sub-cost { font-size: 11px; color: var(--text-dim); }
+
+  .subs-add-form {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ── WHATSAPP COMMANDS ── */
+  .whatsapp-card { grid-column: span 12; }
+
+  .cmd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .cmd-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cmd-item:hover {
+    border-color: var(--accent-border);
+    background: var(--accent-dim);
+  }
+
+  .cmd-item::after {
+    content: 'COPIED';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: all 0.2s;
+    pointer-events: none;
+  }
+
+  .cmd-item.copied::after { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  .cmd-command {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  .cmd-desc { font-size: 11px; color: var(--text-dim); }
+
+  /* ── SHARED INPUT STYLES ── */
+  input[type="text"], input[type="date"], input[type="number"],
+  select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+  }
+
+  input[type="text"]:focus, input[type="date"]:focus,
+  input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,255,204,0.1);
+  }
+
+  select option { background: var(--bg2); }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn:hover { background: var(--accent); color: var(--bg); }
+
+  .btn-danger {
+    border-color: var(--red);
+    background: rgba(255,77,109,0.1);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: var(--red); color: var(--bg); }
+
+  .del-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .del-btn:hover { color: var(--red); background: rgba(255,77,109,0.1); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--accent-border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1024px) {
+    .calendar-card, .todo-card, .spending-card, .subs-card { grid-column: span 12; }
+  }
+
+  @media (max-width: 640px) {
+    main { padding: 12px; gap: 12px; }
+    header { padding: 12px 16px; }
+    .logo { font-size: 22px; }
+    .year-pct { font-size: 24px; }
+  }
+
+  /* ── NOTIFICATION TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── NAV TABS (mobile) ── */
+  .nav-tabs {
+    display: none;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nav-tabs::-webkit-scrollbar { display: none; }
+
+  .nav-tab {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding: 10px 16px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  @media (max-width: 640px) { .nav-tabs { display: flex; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HEX OS</div>
+  <div class="header-right">
+    <div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="date-display" id="headerDate">---</div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="scrollToCard('year-section')">YEAR</button>
+  <button class="nav-tab" onclick="scrollToCard('cal-section')">CALENDAR</button>
+  <button class="nav-tab" onclick="scrollToCard('todo-section')">TODOS</button>
+  <button class="nav-tab" onclick="scrollToCard('spend-section')">SPENDING</button>
+  <button class="nav-tab" onclick="scrollToCard('subs-section')">SUBS</button>
+  <button class="nav-tab" onclick="scrollToCard('wa-section')">COMMANDS</button>
+</nav>
+
+<main>
+
+  <!-- ── YEAR PROGRESS ── -->
+  <div class="card year-card" id="year-section">
+    <div class="card-title"><span class="icon">◈</span> YEAR PROGRESS — 2026</div>
+    <div class="year-meta">
+      <div class="year-label">DAYS ELAPSED / REMAINING</div>
+      <div class="year-pct" id="yearPct">0%</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="yearBar" style="width:0%"></div>
+    </div>
+    <div class="year-stats">
+      <div class="year-stat">ELAPSED <span id="daysElapsed">—</span> DAYS</div>
+      <div class="year-stat">REMAINING <span id="daysLeft">—</span> DAYS</div>
+      <div class="year-stat">WEEK <span id="weekNum">—</span> OF 52</div>
+      <div class="year-stat">QUARTER <span id="quarter">—</span></div>
+    </div>
+  </div>
+
+  <!-- ── CALENDAR ── -->
+  <div class="card calendar-card" id="cal-section">
+    <div class="cal-header">
+      <div class="card-title" style="margin:0"><span class="icon">◫</span> CALENDAR</div>
+      <div class="cal-nav">
+        <button class="btn-icon" onclick="changeMonth(-1)">‹</button>
+        <div class="cal-month" id="calMonthLabel">—</div>
+        <button class="btn-icon" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="cal-events" id="calEvents"></div>
+
+    <div class="add-event-form">
+      <input type="date" id="eventDate" style="flex:1;min-width:120px" />
+      <input type="text" id="eventName" placeholder="Event name…" style="flex:2;min-width:140px" />
+      <button class="btn" onclick="addEvent()">ADD</button>
+    </div>
+  </div>
+
+  <!-- ── TO-DO ── -->
+  <div class="card todo-card" id="todo-section">
+    <div class="todo-header">
+      <div class="card-title" style="margin:0"><span class="icon">◧</span> TO-DO</div>
+      <div class="filter-group">
+        <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('high',this)">HIGH</button>
+        <button class="filter-btn" onclick="setFilter('mid',this)">MID</button>
+        <button class="filter-btn" onclick="setFilter('low',this)">LOW</button>
+        <button class="filter-btn" onclick="setFilter('done',this)">DONE</button>
+      </div>
+    </div>
+    <div class="todo-list" id="todoList"></div>
+    <div class="todo-add-form">
+      <input type="text" id="todoText" placeholder="New task…" style="flex:2;min-width:140px" onkeydown="if(event.key==='Enter')addTodo()" />
+      <select id="todoPriority" style="flex:1;min-width:80px">
+        <option value="high">HIGH</option>
+        <option value="mid" selected>MID</option>
+        <option value="low">LOW</option>
+      </select>
+      <button class="btn" onclick="addTodo()">ADD</button>
+    </div>
+  </div>
+
+  <!-- ── SPENDING ── -->
+  <div class="card spending-card" id="spend-section">
+    <div class="spending-month">
+      <div class="card-title" style="margin:0"><span class="icon">◩</span> SPENDING</div>
+      <div class="spend-month-nav">
+        <button class="btn-icon" onclick="changeSpendMonth(-1)">‹</button>
+        <span id="spendMonthLabel" style="font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;min-width:120px;text-align:center">—</span>
+        <button class="btn-icon" onclick="changeSpendMonth(1)">›</button>
+      </div>
+      <div class="spending-total" id="spendTotal">$0</div>
+    </div>
+
+    <div class="spend-categories" id="spendCategories"></div>
+
+    <div class="spend-add-form">
+      <select id="spendCat" style="flex:1;min-width:100px">
+        <option value="Food">FOOD</option>
+        <option value="Transport">TRANSPORT</option>
+        <option value="Shopping">SHOPPING</option>
+        <option value="Bills">BILLS</option>
+        <option value="Health">HEALTH</option>
+        <option value="Fun">FUN</option>
+      </select>
+      <input type="number" id="spendAmount" placeholder="Amount" style="flex:1;min-width:90px" min="0" step="0.01" />
+      <input type="text" id="spendNote" placeholder="Note (opt)" style="flex:1;min-width:90px" />
+      <button class="btn" onclick="addSpend()">ADD</button>
+    </div>
+
+    <div id="spendLog" style="margin-top:12px;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
+  </div>
+
+  <!-- ── SUBSCRIPTIONS ── -->
+  <div class="card subs-card" id="subs-section">
+    <div class="card-title"><span class="icon">◪</span> SUBSCRIPTIONS</div>
+    <div class="subs-list" id="subsList"></div>
+    <div class="subs-add-form">
+      <input type="text" id="subName" placeholder="Service name…" style="flex:2;min-width:120px" />
+      <input type="number" id="subCost" placeholder="$/mo" style="flex:1;min-width:70px" min="0" step="0.01" />
+      <input type="date" id="subRenewal" style="flex:1;min-width:120px" />
+      <button class="btn" onclick="addSub()">ADD</button>
+    </div>
+  </div>
+
+  <!-- ── WHATSAPP COMMANDS ── -->
+  <div class="card whatsapp-card" id="wa-section">
+    <div class="card-title"><span class="icon">◮</span> WHATSAPP · HEX BOT COMMANDS</div>
+    <div class="cmd-grid" id="cmdGrid"></div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────
+// UTILITIES
+// ──────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const ls = { get: k => JSON.parse(localStorage.getItem(k)||'null'), set: (k,v) => localStorage.setItem(k, JSON.stringify(v)) };
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function scrollToCard(id) { $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+// ──────────────────────────────────────────────
+// CLOCK + DATE
+// ──────────────────────────────────────────────
+function tickClock() {
+  const now = new Date();
+  $('clock').textContent = now.toTimeString().slice(0,8);
+  $('headerDate').textContent = now.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ──────────────────────────────────────────────
+// YEAR PROGRESS
+// ──────────────────────────────────────────────
+function updateYearProgress() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const end   = new Date(now.getFullYear() + 1, 0, 1);
+  const pct   = ((now - start) / (end - start) * 100).toFixed(2);
+  const elapsed = Math.floor((now - start) / 86400000);
+  const total   = Math.floor((end - start) / 86400000);
+  const left    = total - elapsed;
+  const week    = Math.ceil((elapsed + 1) / 7);
+  const quarter = Math.ceil((now.getMonth() + 1) / 3);
+
+  $('yearPct').textContent = pct + '%';
+  $('yearBar').style.width = pct + '%';
+  $('daysElapsed').textContent = elapsed;
+  $('daysLeft').textContent = left;
+  $('weekNum').textContent = week;
+  $('quarter').textContent = 'Q' + quarter;
+}
+updateYearProgress();
+
+// ──────────────────────────────────────────────
+// CALENDAR
+// ──────────────────────────────────────────────
+let calDate = new Date();
+
+function changeMonth(dir) { calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1); renderCal(); }
+
+function renderCal() {
+  const events = ls.get('hexEvents') || [];
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  const today = new Date();
+
+  $('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
+
+  const days = ['SU','MO','TU','WE','TH','FR','SA'];
+  let html = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+
+  // prev month padding
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+  }
+
+  // current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const hasEv = events.some(e => e.date === dateStr);
+    html += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="calDayClick('${dateStr}')">${d}</div>`;
+  }
+
+  // next month padding
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="cal-day other-month">${d}</div>`;
+  }
+
+  $('calGrid').innerHTML = html;
+  renderEvents(month, year);
+}
+
+function calDayClick(dateStr) { $('eventDate').value = dateStr; }
+
+function renderEvents(month, year) {
+  const events = (ls.get('hexEvents') || [])
+    .filter(e => {
+      const d = new Date(e.date + 'T00:00:00');
+      return d.getMonth() === month && d.getFullYear() === year;
+    })
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!events.length) {
+    $('calEvents').innerHTML = '<div class="empty-state">No events this month</div>';
+    return;
+  }
+
+  $('calEvents').innerHTML = events.map(e => `
+    <div class="cal-event-item">
+      <div class="cal-event-date">${formatDate(e.date)}</div>
+      <div class="cal-event-name">${esc(e.name)}</div>
+      <button class="del-btn" onclick="deleteEvent('${e.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function addEvent() {
+  const date = $('eventDate').value;
+  const name = $('eventName').value.trim();
+  if (!date || !name) { toast('FILL DATE + NAME'); return; }
+  const events = ls.get('hexEvents') || [];
+  events.push({ id: Date.now().toString(), date, name });
+  ls.set('hexEvents', events);
+  $('eventName').value = '';
+  renderCal();
+  toast('EVENT ADDED');
+}
+
+function deleteEvent(id) {
+  const events = (ls.get('hexEvents') || []).filter(e => e.id !== id);
+  ls.set('hexEvents', events);
+  renderCal();
+  toast('EVENT REMOVED');
+}
+
+function formatDate(str) {
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+renderCal();
+
+// ──────────────────────────────────────────────
+// TO-DO
+// ──────────────────────────────────────────────
+let todoFilter = 'all';
+
+function setFilter(f, btn) {
+  todoFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTodos();
+}
+
+function renderTodos() {
+  const todos = ls.get('hexTodos') || [];
+  let filtered = todos;
+  if (todoFilter === 'done') filtered = todos.filter(t => t.done);
+  else if (todoFilter !== 'all') filtered = todos.filter(t => t.priority === todoFilter && !t.done);
+
+  if (!filtered.length) {
+    $('todoList').innerHTML = '<div class="empty-state">Nothing here</div>';
+    return;
+  }
+
+  $('todoList').innerHTML = filtered.map(t => `
+    <div class="todo-item${t.done?' done':''}">
+      <div class="todo-check" onclick="toggleTodo('${t.id}')"></div>
+      <div class="todo-text">${esc(t.text)}</div>
+      <div class="priority-badge ${t.priority}">${t.priority.toUpperCase()}</div>
+      <button class="del-btn" onclick="deleteTodo('${t.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function addTodo() {
+  const text = $('todoText').value.trim();
+  const priority = $('todoPriority').value;
+  if (!text) { toast('ENTER TASK TEXT'); return; }
+  const todos = ls.get('hexTodos') || [];
+  todos.unshift({ id: Date.now().toString(), text, priority, done: false });
+  ls.set('hexTodos', todos);
+  $('todoText').value = '';
+  renderTodos();
+  toast('TASK ADDED');
+}
+
+function toggleTodo(id) {
+  const todos = ls.get('hexTodos') || [];
+  const t = todos.find(t => t.id === id);
+  if (t) t.done = !t.done;
+  ls.set('hexTodos', todos);
+  renderTodos();
+}
+
+function deleteTodo(id) {
+  const todos = (ls.get('hexTodos') || []).filter(t => t.id !== id);
+  ls.set('hexTodos', todos);
+  renderTodos();
+  toast('TASK REMOVED');
+}
+
+renderTodos();
+
+// ──────────────────────────────────────────────
+// SPENDING
+// ──────────────────────────────────────────────
+const CATS = ['Food','Transport','Shopping','Bills','Health','Fun'];
+const CAT_COLORS = {
+  Food:      '#00ffcc',
+  Transport: '#00d4aa',
+  Shopping:  '#ffb830',
+  Bills:     '#ff4d6d',
+  Health:    '#a78bfa',
+  Fun:       '#38bdf8'
+};
+
+let spendDate = new Date();
+
+function spendKey() {
+  return `hexSpend_${spendDate.getFullYear()}_${spendDate.getMonth()}`;
+}
+
+function changeSpendMonth(dir) {
+  spendDate = new Date(spendDate.getFullYear(), spendDate.getMonth() + dir, 1);
+  renderSpending();
+}
+
+function renderSpending() {
+  const data = ls.get(spendKey()) || { entries: [] };
+  const entries = data.entries || [];
+
+  $('spendMonthLabel').textContent = spendDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+
+  const totals = {};
+  CATS.forEach(c => totals[c] = 0);
+  entries.forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
+
+  const grandTotal = Object.values(totals).reduce((a,b) => a+b, 0);
+  $('spendTotal').textContent = '$' + grandTotal.toFixed(2);
+
+  const max = Math.max(...Object.values(totals), 1);
+  $('spendCategories').innerHTML = CATS.map(cat => `
+    <div class="spend-row">
+      <div class="spend-label-row">
+        <span class="spend-cat-name">${cat.toUpperCase()}</span>
+        <span class="spend-cat-amount">$${(totals[cat]||0).toFixed(2)}</span>
+      </div>
+      <div class="spend-bar-track">
+        <div class="spend-bar-fill" style="width:${(totals[cat]||0)/max*100}%;background:${CAT_COLORS[cat]};box-shadow:0 0 8px ${CAT_COLORS[cat]}60"></div>
+      </div>
+    </div>
+  `).join('');
+
+  const logEntries = [...entries].reverse().slice(0, 20);
+  $('spendLog').innerHTML = logEntries.length ? logEntries.map(e => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;">
+      <span style="color:${CAT_COLORS[e.cat]};min-width:80px">${e.cat.toUpperCase()}</span>
+      <span style="flex:1;color:var(--text-dim);padding:0 8px">${esc(e.note||'')}</span>
+      <span>$${e.amount.toFixed(2)}</span>
+      <button class="del-btn" onclick="deleteSpend('${e.id}')">✕</button>
+    </div>
+  `).join('') : '<div class="empty-state">No entries this month</div>';
+}
+
+function addSpend() {
+  const cat    = $('spendCat').value;
+  const amount = parseFloat($('spendAmount').value);
+  const note   = $('spendNote').value.trim();
+  if (!amount || amount <= 0) { toast('ENTER VALID AMOUNT'); return; }
+  const data = ls.get(spendKey()) || { entries: [] };
+  data.entries.push({ id: Date.now().toString(), cat, amount, note });
+  ls.set(spendKey(), data);
+  $('spendAmount').value = '';
+  $('spendNote').value = '';
+  renderSpending();
+  toast('SPEND LOGGED');
+}
+
+function deleteSpend(id) {
+  const data = ls.get(spendKey()) || { entries: [] };
+  data.entries = data.entries.filter(e => e.id !== id);
+  ls.set(spendKey(), data);
+  renderSpending();
+  toast('ENTRY REMOVED');
+}
+
+renderSpending();
+
+// ──────────────────────────────────────────────
+// SUBSCRIPTIONS
+// ──────────────────────────────────────────────
+function daysUntil(dateStr) {
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const tgt  = new Date(dateStr + 'T00:00:00');
+  let diff   = Math.ceil((tgt - now) / 86400000);
+  if (diff < 0) diff += 30; // next cycle approx
+  return diff;
+}
+
+function dayColor(days) {
+  if (days <= 3)  return 'red';
+  if (days <= 7)  return 'amber';
+  return 'green';
+}
+
+function renderSubs() {
+  const subs = (ls.get('hexSubs') || []).sort((a,b) => daysUntil(a.renewal) - daysUntil(b.renewal));
+
+  if (!subs.length) {
+    $('subsList').innerHTML = '<div class="empty-state">No subscriptions tracked</div>';
+    return;
+  }
+
+  $('subsList').innerHTML = subs.map(s => {
+    const days = daysUntil(s.renewal);
+    const cls  = dayColor(days);
+    return `
+      <div class="sub-item">
+        <div class="sub-left">
+          <div class="sub-name">${esc(s.name)}</div>
+          <div class="sub-meta">RENEWS ${formatDate(s.renewal)}</div>
+        </div>
+        <div class="sub-right">
+          <div>
+            <div class="sub-days ${cls}">${days}</div>
+            <div class="sub-days-label">DAYS<br>LEFT</div>
+          </div>
+          ${s.cost ? `<div class="sub-cost">$${parseFloat(s.cost).toFixed(2)}/mo</div>` : ''}
+          <button class="del-btn" onclick="deleteSub('${s.id}')">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addSub() {
+  const name    = $('subName').value.trim();
+  const cost    = $('subCost').value;
+  const renewal = $('subRenewal').value;
+  if (!name || !renewal) { toast('FILL NAME + DATE'); return; }
+  const subs = ls.get('hexSubs') || [];
+  subs.push({ id: Date.now().toString(), name, cost, renewal });
+  ls.set('hexSubs', subs);
+  $('subName').value = '';
+  $('subCost').value = '';
+  $('subRenewal').value = '';
+  renderSubs();
+  toast('SUBSCRIPTION ADDED');
+}
+
+function deleteSub(id) {
+  const subs = (ls.get('hexSubs') || []).filter(s => s.id !== id);
+  ls.set('hexSubs', subs);
+  renderSubs();
+  toast('SUBSCRIPTION REMOVED');
+}
+
+renderSubs();
+
+// ──────────────────────────────────────────────
+// WHATSAPP COMMANDS
+// ──────────────────────────────────────────────
+const COMMANDS = [
+  { cmd: '!help',                desc: 'Show all available Hex bot commands' },
+  { cmd: '!status',             desc: 'Get current system status' },
+  { cmd: '!remind me [msg] in [time]', desc: 'Set a reminder via Hex bot' },
+  { cmd: '!note [text]',        desc: 'Save a quick note' },
+  { cmd: '!notes',              desc: 'List all saved notes' },
+  { cmd: '!todo [task]',        desc: 'Add task to your to-do list' },
+  { cmd: '!todos',              desc: 'View your to-do list' },
+  { cmd: '!done [task #]',      desc: 'Mark a to-do item as complete' },
+  { cmd: '!spend [amount] [cat]', desc: 'Log a spending entry' },
+  { cmd: '!budget',             desc: 'View monthly budget summary' },
+  { cmd: '!weather [city]',     desc: 'Get weather for a city' },
+  { cmd: '!calc [expression]',  desc: 'Calculate a math expression' },
+  { cmd: '!translate [text]',   desc: 'Translate text to English' },
+  { cmd: '!summarize [url]',    desc: 'Summarize a webpage or article' },
+  { cmd: '!gpt [prompt]',       desc: 'Ask GPT a question via Hex bot' },
+  { cmd: '!ping',               desc: 'Check if bot is online' },
+];
+
+function renderCommands() {
+  $('cmdGrid').innerHTML = COMMANDS.map(c => `
+    <div class="cmd-item" onclick="copyCmd(this,'${c.cmd.replace(/'/g,"\\'")}')">
+      <div class="cmd-command">${esc(c.cmd)}</div>
+      <div class="cmd-desc">${esc(c.desc)}</div>
+    </div>
+  `).join('');
+}
+
+function copyCmd(el, cmd) {
+  navigator.clipboard.writeText(cmd).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 1200);
+    toast('COPIED: ' + cmd);
+  }).catch(() => {
+    toast('COPY FAILED');
+  });
+}
+
+renderCommands();
+
+// ──────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Set today's date as default for event input
+$('eventDate').value = new Date().toISOString().slice(0,10);
+$('subRenewal').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
