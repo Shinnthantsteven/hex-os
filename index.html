@@ -42,13 +42,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 28px;
+    padding: 14px 28px;
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(7,7,15,0.92);
+    background: rgba(7,7,15,0.95);
     backdrop-filter: blur(12px);
+    gap: 16px;
   }
 
   .logo {
@@ -57,13 +58,62 @@
     letter-spacing: 4px;
     color: var(--accent);
     text-shadow: 0 0 20px rgba(0,255,204,0.5);
+    flex-shrink: 0;
+  }
+
+  .header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
+    flex-shrink: 0;
   }
+
+  /* ── SYNC INDICATOR ── */
+  .sync-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+
+  .sync-pill:hover { border-color: var(--accent-border); }
+
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+  }
+
+  #syncLabel {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    transition: color 0.3s;
+    min-width: 54px;
+  }
+
+  .syncing #syncLabel { color: var(--amber); }
+  .synced  #syncLabel { color: var(--accent); }
+  .error   #syncLabel { color: var(--red); }
+  .notoken #syncLabel { color: var(--amber); }
 
   .clock {
     font-family: 'Bebas Neue', sans-serif;
@@ -73,9 +123,63 @@
   }
 
   .date-display {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-dim);
     text-align: right;
+  }
+
+  /* ── TOKEN MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7,7,15,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: var(--bg2);
+    border: 1px solid var(--accent-border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 0 40px rgba(0,255,204,0.15);
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .modal-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+
+  .modal-sub a { color: var(--accent); text-decoration: none; }
+
+  .modal-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .modal-note {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    line-height: 1.6;
   }
 
   /* ── GRID LAYOUT ── */
@@ -177,6 +281,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .cal-nav {
@@ -197,23 +303,24 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
   }
 
   .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
 
   .cal-month {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: 2px;
     color: var(--text);
-    min-width: 140px;
+    min-width: 130px;
     text-align: center;
   }
 
   .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 3px;
   }
 
   .cal-day-label {
@@ -231,25 +338,16 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     transition: all 0.15s;
     border: 1px solid transparent;
     position: relative;
-    gap: 2px;
-    padding: 2px;
   }
 
   .cal-day:hover { background: var(--bg3); border-color: var(--accent-border); }
-
-  .cal-day.today {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .cal-day.other-month { color: var(--text-dim); opacity: 0.4; }
+  .cal-day.today { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+  .cal-day.other-month { color: var(--text-dim); opacity: 0.35; }
 
   .cal-day.has-event::after {
     content: '';
@@ -257,16 +355,16 @@
     background: var(--accent);
     border-radius: 50%;
     position: absolute;
-    bottom: 3px;
+    bottom: 2px;
   }
 
   .cal-events {
     margin-top: 14px;
-    max-height: 160px;
+    max-height: 150px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 
   .cal-event-item {
@@ -276,24 +374,14 @@
     background: var(--bg3);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 7px 10px;
     font-size: 12px;
   }
 
-  .cal-event-date {
-    color: var(--accent);
-    font-size: 10px;
-    min-width: 60px;
-  }
-
+  .cal-event-date { color: var(--accent); font-size: 10px; min-width: 55px; }
   .cal-event-name { flex: 1; padding: 0 8px; }
 
-  .add-event-form {
-    margin-top: 12px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .add-event-form { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ── TO-DO ── */
   .todo-card { grid-column: span 6; }
@@ -307,10 +395,7 @@
     gap: 8px;
   }
 
-  .filter-group {
-    display: flex;
-    gap: 4px;
-  }
+  .filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
 
   .filter-btn {
     font-family: 'DM Mono', monospace;
@@ -325,19 +410,9 @@
     letter-spacing: 1px;
   }
 
-  .filter-btn.active, .filter-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-dim);
-  }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
-  .todo-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 280px;
-    overflow-y: auto;
-  }
+  .todo-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
 
   .todo-item {
     display: flex;
@@ -351,7 +426,6 @@
   }
 
   .todo-item:hover { border-color: var(--accent-border); }
-
   .todo-item.done { opacity: 0.4; }
   .todo-item.done .todo-text { text-decoration: line-through; }
 
@@ -367,15 +441,11 @@
     transition: all 0.2s;
   }
 
-  .todo-item.done .todo-check {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-
+  .todo-item.done .todo-check { background: var(--accent); border-color: var(--accent); }
   .todo-check::after { content: '✓'; font-size: 10px; color: var(--bg); opacity: 0; }
   .todo-item.done .todo-check::after { opacity: 1; }
 
-  .todo-text { flex: 1; font-size: 12px; }
+  .todo-text { flex: 1; font-size: 12px; word-break: break-word; }
 
   .priority-badge {
     font-size: 9px;
@@ -390,12 +460,7 @@
   .priority-badge.mid  { background: rgba(255,184,48,0.2); color: var(--amber); border: 1px solid rgba(255,184,48,0.4); }
   .priority-badge.low  { background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent-border); }
 
-  .todo-add-form {
-    margin-top: 12px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .todo-add-form { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ── SPENDING ── */
   .spending-card { grid-column: span 6; }
@@ -405,33 +470,22 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .spending-total {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    color: var(--accent);
-  }
+  .spending-total { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent); }
 
   .spend-categories { display: flex; flex-direction: column; gap: 10px; }
 
   .spend-row { display: flex; flex-direction: column; gap: 4px; }
 
-  .spend-label-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-  }
+  .spend-label-row { display: flex; justify-content: space-between; font-size: 11px; }
 
   .spend-cat-name { color: var(--text-dim); letter-spacing: 1px; }
   .spend-cat-amount { color: var(--text); }
 
-  .spend-bar-track {
-    height: 5px;
-    background: var(--bg3);
-    border-radius: 99px;
-    overflow: hidden;
-  }
+  .spend-bar-track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
 
   .spend-bar-fill {
     height: 100%;
@@ -440,19 +494,9 @@
     transition: width 0.8s cubic-bezier(.4,0,.2,1);
   }
 
-  .spend-add-form {
-    margin-top: 14px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
+  .spend-add-form { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-  .spend-month-nav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .spend-month-nav { display: flex; align-items: center; gap: 8px; }
 
   /* ── SUBSCRIPTIONS ── */
   .subs-card { grid-column: span 6; }
@@ -475,7 +519,6 @@
   .sub-left { display: flex; flex-direction: column; gap: 3px; }
   .sub-name { font-size: 13px; }
   .sub-meta { font-size: 10px; color: var(--text-dim); }
-
   .sub-right { display: flex; align-items: center; gap: 12px; }
 
   .sub-days {
@@ -486,20 +529,14 @@
     text-align: right;
   }
 
-  .sub-days.red { color: var(--red); text-shadow: 0 0 8px rgba(255,77,109,0.4); }
+  .sub-days.red   { color: var(--red);   text-shadow: 0 0 8px rgba(255,77,109,0.4); }
   .sub-days.amber { color: var(--amber); text-shadow: 0 0 8px rgba(255,184,48,0.4); }
   .sub-days.green { color: var(--green); text-shadow: 0 0 8px rgba(0,255,204,0.3); }
 
   .sub-days-label { font-size: 9px; color: var(--text-dim); text-align: right; line-height: 1.2; }
-
   .sub-cost { font-size: 11px; color: var(--text-dim); }
 
-  .subs-add-form {
-    margin-top: 12px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .subs-add-form { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ── WHATSAPP COMMANDS ── */
   .whatsapp-card { grid-column: span 12; }
@@ -524,10 +561,7 @@
     overflow: hidden;
   }
 
-  .cmd-item:hover {
-    border-color: var(--accent-border);
-    background: var(--accent-dim);
-  }
+  .cmd-item:hover { border-color: var(--accent-border); background: var(--accent-dim); }
 
   .cmd-item::after {
     content: 'COPIED';
@@ -548,18 +582,12 @@
 
   .cmd-item.copied::after { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-  .cmd-command {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--accent);
-    letter-spacing: 0.5px;
-  }
-
+  .cmd-command { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
   .cmd-desc { font-size: 11px; color: var(--text-dim); }
 
-  /* ── SHARED INPUT STYLES ── */
+  /* ── SHARED INPUTS ── */
   input[type="text"], input[type="date"], input[type="number"],
-  select, textarea {
+  input[type="password"], select, textarea {
     background: var(--bg3);
     border: 1px solid var(--border);
     color: var(--text);
@@ -572,8 +600,7 @@
     min-width: 0;
   }
 
-  input[type="text"]:focus, input[type="date"]:focus,
-  input[type="number"]:focus, select:focus, textarea:focus {
+  input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(0,255,204,0.1);
   }
@@ -597,13 +624,13 @@
 
   .btn:hover { background: var(--accent); color: var(--bg); }
 
-  .btn-danger {
-    border-color: var(--red);
-    background: rgba(255,77,109,0.1);
-    color: var(--red);
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
   }
 
-  .btn-danger:hover { background: var(--red); color: var(--bg); }
+  .btn-ghost:hover { border-color: var(--border); background: var(--bg3); color: var(--text); }
 
   .del-btn {
     background: transparent;
@@ -642,12 +669,13 @@
 
   @media (max-width: 640px) {
     main { padding: 12px; gap: 12px; }
-    header { padding: 12px 16px; }
-    .logo { font-size: 22px; }
+    header { padding: 10px 14px; }
+    .logo { font-size: 20px; }
     .year-pct { font-size: 24px; }
+    .clock { font-size: 18px; }
   }
 
-  /* ── NOTIFICATION TOAST ── */
+  /* ── TOAST ── */
   .toast {
     position: fixed;
     bottom: 24px;
@@ -664,6 +692,7 @@
     transition: all 0.3s;
     z-index: 999;
     pointer-events: none;
+    max-width: 300px;
   }
 
   .toast.show { transform: translateY(0); opacity: 1; }
@@ -705,9 +734,39 @@
 </head>
 <body>
 
+<!-- ── TOKEN MODAL ── -->
+<div class="modal-overlay" id="tokenModal" onclick="if(event.target===this)closeTokenModal()">
+  <div class="modal-box">
+    <div class="modal-title">⚙ GITHUB TOKEN</div>
+    <div class="modal-sub">
+      Paste a GitHub Personal Access Token with <strong>repo</strong> scope.<br>
+      The token is stored only in your browser's localStorage — never synced to GitHub.
+    </div>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width:100%" />
+    <div class="modal-row">
+      <button class="btn" onclick="saveToken()">SAVE & CONNECT</button>
+      <button class="btn btn-ghost" onclick="closeTokenModal()">CANCEL</button>
+      <button class="btn btn-ghost" onclick="clearToken()" style="margin-left:auto;color:var(--red);border-color:var(--red)">CLEAR</button>
+    </div>
+    <div class="modal-note">
+      Token stays in localStorage on this device only. Create one at<br>
+      <strong>github.com → Settings → Developer settings → Personal access tokens</strong>
+    </div>
+  </div>
+</div>
+
 <header>
   <div class="logo">HEX OS</div>
+
+  <div class="header-center">
+    <div class="sync-pill" id="syncPill" onclick="openTokenModal()" title="Click to set GitHub token">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncLabel">LOADING</span>
+    </div>
+  </div>
+
   <div class="header-right">
+    <button class="btn-icon" onclick="openTokenModal()" title="GitHub Token Settings" style="font-size:13px">⚙</button>
     <div>
       <div class="clock" id="clock">--:--:--</div>
       <div class="date-display" id="headerDate">---</div>
@@ -754,14 +813,12 @@
         <button class="btn-icon" onclick="changeMonth(1)">›</button>
       </div>
     </div>
-
     <div class="cal-grid" id="calGrid"></div>
-
     <div class="cal-events" id="calEvents"></div>
-
     <div class="add-event-form">
       <input type="date" id="eventDate" style="flex:1;min-width:120px" />
-      <input type="text" id="eventName" placeholder="Event name…" style="flex:2;min-width:140px" />
+      <input type="text" id="eventName" placeholder="Event name…" style="flex:2;min-width:130px"
+             onkeydown="if(event.key==='Enter')addEvent()" />
       <button class="btn" onclick="addEvent()">ADD</button>
     </div>
   </div>
@@ -780,8 +837,9 @@
     </div>
     <div class="todo-list" id="todoList"></div>
     <div class="todo-add-form">
-      <input type="text" id="todoText" placeholder="New task…" style="flex:2;min-width:140px" onkeydown="if(event.key==='Enter')addTodo()" />
-      <select id="todoPriority" style="flex:1;min-width:80px">
+      <input type="text" id="todoText" placeholder="New task…" style="flex:2;min-width:130px"
+             onkeydown="if(event.key==='Enter')addTodo()" />
+      <select id="todoPriority" style="flex:1;min-width:75px">
         <option value="high">HIGH</option>
         <option value="mid" selected>MID</option>
         <option value="low">LOW</option>
@@ -796,7 +854,7 @@
       <div class="card-title" style="margin:0"><span class="icon">◩</span> SPENDING</div>
       <div class="spend-month-nav">
         <button class="btn-icon" onclick="changeSpendMonth(-1)">‹</button>
-        <span id="spendMonthLabel" style="font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;min-width:120px;text-align:center">—</span>
+        <span id="spendMonthLabel" style="font-family:'Bebas Neue';font-size:14px;letter-spacing:2px;min-width:110px;text-align:center">—</span>
         <button class="btn-icon" onclick="changeSpendMonth(1)">›</button>
       </div>
       <div class="spending-total" id="spendTotal">$0</div>
@@ -805,7 +863,7 @@
     <div class="spend-categories" id="spendCategories"></div>
 
     <div class="spend-add-form">
-      <select id="spendCat" style="flex:1;min-width:100px">
+      <select id="spendCat" style="flex:1;min-width:95px">
         <option value="Food">FOOD</option>
         <option value="Transport">TRANSPORT</option>
         <option value="Shopping">SHOPPING</option>
@@ -813,8 +871,8 @@
         <option value="Health">HEALTH</option>
         <option value="Fun">FUN</option>
       </select>
-      <input type="number" id="spendAmount" placeholder="Amount" style="flex:1;min-width:90px" min="0" step="0.01" />
-      <input type="text" id="spendNote" placeholder="Note (opt)" style="flex:1;min-width:90px" />
+      <input type="number" id="spendAmount" placeholder="Amount" style="flex:1;min-width:80px" min="0" step="0.01" />
+      <input type="text" id="spendNote" placeholder="Note (opt)" style="flex:1;min-width:80px" />
       <button class="btn" onclick="addSpend()">ADD</button>
     </div>
 
@@ -826,8 +884,8 @@
     <div class="card-title"><span class="icon">◪</span> SUBSCRIPTIONS</div>
     <div class="subs-list" id="subsList"></div>
     <div class="subs-add-form">
-      <input type="text" id="subName" placeholder="Service name…" style="flex:2;min-width:120px" />
-      <input type="number" id="subCost" placeholder="$/mo" style="flex:1;min-width:70px" min="0" step="0.01" />
+      <input type="text" id="subName" placeholder="Service name…" style="flex:2;min-width:110px" />
+      <input type="number" id="subCost" placeholder="$/mo" style="flex:1;min-width:65px" min="0" step="0.01" />
       <input type="date" id="subRenewal" style="flex:1;min-width:120px" />
       <button class="btn" onclick="addSub()">ADD</button>
     </div>
@@ -844,93 +902,294 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ──────────────────────────────────────────────
-// UTILITIES
-// ──────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const ls = { get: k => JSON.parse(localStorage.getItem(k)||'null'), set: (k,v) => localStorage.setItem(k, JSON.stringify(v)) };
+// ════════════════════════════════════════════════
+// CONFIG  ← paste your GitHub PAT here OR use the ⚙ button in the header
+// ════════════════════════════════════════════════
+const GH_TOKEN_HARDCODED = ''; // e.g. 'ghp_xxxxxxxxxxxx'
+const GH_OWNER = 'Shinnthantsteven';
+const GH_REPO  = 'hex-os';
+const GH_FILE  = 'data.json';
 
-function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+// ════════════════════════════════════════════════
+// RUNTIME STATE
+// ════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const CATS = ['Food','Transport','Shopping','Bills','Health','Fun'];
+const CAT_COLORS = { Food:'#00ffcc', Transport:'#00d4aa', Shopping:'#ffb830', Bills:'#ff4d6d', Health:'#a78bfa', Fun:'#38bdf8' };
+
+let ghToken  = GH_TOKEN_HARDCODED || localStorage.getItem('hexGhToken') || '';
+let fileSha  = null;
+let saveTimer = null;
+let pollTimer = null;
+
+let state = { todos:[], events:{}, spend:{}, subs:[], updated:'' };
+
+// ════════════════════════════════════════════════
+// SYNC INDICATOR
+// ════════════════════════════════════════════════
+const SYNC_STATES = {
+  loading: { text:'LOADING',  color:'var(--text-dim)' },
+  syncing: { text:'SYNCING…', color:'var(--amber)' },
+  synced:  { text:'SYNCED',   color:'var(--accent)' },
+  error:   { text:'OFFLINE',  color:'var(--red)' },
+  notoken: { text:'NO TOKEN', color:'var(--amber)' },
+};
+
+function setSyncStatus(s) {
+  const cfg = SYNC_STATES[s] || SYNC_STATES.loading;
+  const pill = $('syncPill');
+  const dot  = $('syncDot');
+  const lbl  = $('syncLabel');
+  lbl.textContent = cfg.text;
+  dot.style.background  = cfg.color;
+  dot.style.boxShadow   = `0 0 7px ${cfg.color}`;
+  lbl.style.color       = cfg.color;
+  pill.className = `sync-pill ${s}`;
 }
 
-function scrollToCard(id) { $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+// ════════════════════════════════════════════════
+// GITHUB API
+// ════════════════════════════════════════════════
+const API_URL = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
 
-// ──────────────────────────────────────────────
+function ghHeaders() {
+  return {
+    Authorization: `Bearer ${ghToken}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+}
+
+async function ghGet() {
+  if (!ghToken) { setSyncStatus('notoken'); return null; }
+  try {
+    const r = await fetch(API_URL + '?t=' + Date.now(), { headers: ghHeaders() });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    fileSha = j.sha;
+    // Decode base64 → UTF-8 → JSON
+    const raw = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g, '')))));
+    return raw;
+  } catch (e) {
+    setSyncStatus('error');
+    return null;
+  }
+}
+
+async function ghPut(data) {
+  if (!ghToken) { setSyncStatus('notoken'); return false; }
+  const json    = JSON.stringify(data, null, 2);
+  const content = btoa(unescape(encodeURIComponent(json)));
+  const body    = { message: 'HEX OS sync', content };
+  if (fileSha) body.sha = fileSha;
+
+  try {
+    const r = await fetch(API_URL, { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+
+    if (r.status === 409) {
+      // SHA stale — re-fetch then retry once
+      const fresh = await ghGet();
+      if (!fresh) return false;
+      return ghPut(data);
+    }
+
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    fileSha = j.content.sha;
+    return true;
+  } catch (e) {
+    setSyncStatus('error');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════
+// LOAD DATA
+// ════════════════════════════════════════════════
+async function loadData() {
+  setSyncStatus('loading');
+  const remote = await ghGet();
+  if (remote) {
+    state = normalise(remote);
+    lsSave();
+    setSyncStatus('synced');
+  } else {
+    // Fallback to localStorage
+    const local = localStorage.getItem('hexState');
+    if (local) { try { state = normalise(JSON.parse(local)); } catch (_) {} }
+    setSyncStatus(ghToken ? 'error' : 'notoken');
+  }
+  renderAll();
+}
+
+// Normalise raw data.json → internal state shape
+function normalise(raw) {
+  let spend = raw.spend || {};
+
+  // If spend is the flat bot/initial format {Food:0,...} → convert to month-keyed
+  if (CATS.some(c => typeof spend[c] === 'number')) {
+    const mk = todayMonthKey();
+    const prev = spend;
+    spend = {};
+    spend[mk] = { entries: [] };
+    CATS.forEach(c => { spend[mk][c] = prev[c] || 0; });
+  }
+
+  return {
+    todos:   Array.isArray(raw.todos) ? raw.todos : [],
+    events:  (raw.events && typeof raw.events === 'object' && !Array.isArray(raw.events)) ? raw.events : {},
+    spend,
+    subs:    Array.isArray(raw.subs) ? raw.subs : [],
+    updated: raw.updated || '',
+  };
+}
+
+// ════════════════════════════════════════════════
+// SAVE DATA  (debounced 800ms)
+// ════════════════════════════════════════════════
+function schedSave() {
+  lsSave();
+  clearTimeout(saveTimer);
+  setSyncStatus('syncing');
+  saveTimer = setTimeout(doSave, 800);
+}
+
+async function doSave() {
+  state.updated = new Date().toISOString();
+  lsSave();
+  const ok = await ghPut(state);
+  setSyncStatus(ok ? 'synced' : (ghToken ? 'error' : 'notoken'));
+}
+
+function lsSave() { try { localStorage.setItem('hexState', JSON.stringify(state)); } catch (_) {} }
+
+// ════════════════════════════════════════════════
+// POLL for remote changes every 60 seconds
+// ════════════════════════════════════════════════
+function startPoll() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (!ghToken) return;
+    const remote = await ghGet();
+    if (!remote) return;
+    if ((remote.updated || '') > (state.updated || '')) {
+      state = normalise(remote);
+      lsSave();
+      renderAll();
+      setSyncStatus('synced');
+      toast('↓ DATA REFRESHED FROM GITHUB');
+    }
+  }, 60000);
+}
+
+// ════════════════════════════════════════════════
+// TOKEN MODAL
+// ════════════════════════════════════════════════
+function openTokenModal() {
+  $('tokenInput').value = ghToken;
+  $('tokenModal').classList.add('open');
+}
+
+function closeTokenModal() { $('tokenModal').classList.remove('open'); }
+
+function saveToken() {
+  const t = $('tokenInput').value.trim();
+  ghToken = t;
+  if (t) localStorage.setItem('hexGhToken', t);
+  else   localStorage.removeItem('hexGhToken');
+  closeTokenModal();
+  fileSha = null;
+  loadData();
+}
+
+function clearToken() {
+  ghToken = '';
+  localStorage.removeItem('hexGhToken');
+  $('tokenInput').value = '';
+  closeTokenModal();
+  setSyncStatus('notoken');
+}
+
+// ════════════════════════════════════════════════
+// RENDER ALL
+// ════════════════════════════════════════════════
+function renderAll() {
+  renderCal();
+  renderTodos();
+  renderSpending();
+  renderSubs();
+  renderCommands();
+}
+
+// ════════════════════════════════════════════════
 // CLOCK + DATE
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 function tickClock() {
   const now = new Date();
-  $('clock').textContent = now.toTimeString().slice(0,8);
+  $('clock').textContent = now.toTimeString().slice(0, 8);
   $('headerDate').textContent = now.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 }
 setInterval(tickClock, 1000);
 tickClock();
 
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // YEAR PROGRESS
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 function updateYearProgress() {
-  const now = new Date();
+  const now   = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
   const end   = new Date(now.getFullYear() + 1, 0, 1);
   const pct   = ((now - start) / (end - start) * 100).toFixed(2);
   const elapsed = Math.floor((now - start) / 86400000);
   const total   = Math.floor((end - start) / 86400000);
-  const left    = total - elapsed;
-  const week    = Math.ceil((elapsed + 1) / 7);
-  const quarter = Math.ceil((now.getMonth() + 1) / 3);
 
-  $('yearPct').textContent = pct + '%';
-  $('yearBar').style.width = pct + '%';
+  $('yearPct').textContent   = pct + '%';
+  $('yearBar').style.width   = pct + '%';
   $('daysElapsed').textContent = elapsed;
-  $('daysLeft').textContent = left;
-  $('weekNum').textContent = week;
-  $('quarter').textContent = 'Q' + quarter;
+  $('daysLeft').textContent  = total - elapsed;
+  $('weekNum').textContent   = Math.ceil((elapsed + 1) / 7);
+  $('quarter').textContent   = 'Q' + Math.ceil((now.getMonth() + 1) / 3);
 }
 updateYearProgress();
 
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // CALENDAR
-// ──────────────────────────────────────────────
+// data shape: state.events = { "YYYY-MM-DD": [{id, name}, …] }
+// ════════════════════════════════════════════════
 let calDate = new Date();
 
-function changeMonth(dir) { calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1); renderCal(); }
+function changeMonth(dir) {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  renderCal();
+}
 
 function renderCal() {
-  const events = ls.get('hexEvents') || [];
-  const year = calDate.getFullYear(), month = calDate.getMonth();
+  const year  = calDate.getFullYear();
+  const month = calDate.getMonth();
   const today = new Date();
 
-  $('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  $('calMonthLabel').textContent = calDate.toLocaleDateString('en-US', { month:'long', year:'numeric' }).toUpperCase();
 
-  const firstDay = new Date(year, month, 1).getDay();
+  const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
 
-  const days = ['SU','MO','TU','WE','TH','FR','SA'];
-  let html = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+  const LABELS = ['SU','MO','TU','WE','TH','FR','SA'];
+  let html = LABELS.map(d => `<div class="cal-day-label">${d}</div>`).join('');
 
-  // prev month padding
   for (let i = firstDay - 1; i >= 0; i--) {
     html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
   }
 
-  // current month
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dateStr = fmtDateKey(year, month + 1, d);
     const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-    const hasEv = events.some(e => e.date === dateStr);
-    html += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="calDayClick('${dateStr}')">${d}</div>`;
+    const hasEv   = Array.isArray(state.events[dateStr]) && state.events[dateStr].length > 0;
+    html += `<div class="cal-day${isToday ? ' today' : ''}${hasEv ? ' has-event' : ''}" onclick="calDayClick('${dateStr}')">${d}</div>`;
   }
 
-  // next month padding
-  const total = firstDay + daysInMonth;
-  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let d = 1; d <= remaining; d++) {
+  const remaining = (firstDay + daysInMonth) % 7;
+  for (let d = 1; d <= (remaining === 0 ? 0 : 7 - remaining); d++) {
     html += `<div class="cal-day other-month">${d}</div>`;
   }
 
@@ -941,56 +1200,51 @@ function renderCal() {
 function calDayClick(dateStr) { $('eventDate').value = dateStr; }
 
 function renderEvents(month, year) {
-  const events = (ls.get('hexEvents') || [])
-    .filter(e => {
-      const d = new Date(e.date + 'T00:00:00');
-      return d.getMonth() === month && d.getFullYear() === year;
-    })
-    .sort((a,b) => a.date.localeCompare(b.date));
+  const evts = [];
+  Object.entries(state.events).forEach(([date, list]) => {
+    const d = new Date(date + 'T00:00:00');
+    if (d.getMonth() === month && d.getFullYear() === year) {
+      (list || []).forEach(e => evts.push({ ...e, date }));
+    }
+  });
+  evts.sort((a, b) => a.date.localeCompare(b.date));
 
-  if (!events.length) {
-    $('calEvents').innerHTML = '<div class="empty-state">No events this month</div>';
-    return;
-  }
-
-  $('calEvents').innerHTML = events.map(e => `
-    <div class="cal-event-item">
-      <div class="cal-event-date">${formatDate(e.date)}</div>
-      <div class="cal-event-name">${esc(e.name)}</div>
-      <button class="del-btn" onclick="deleteEvent('${e.id}')">✕</button>
-    </div>
-  `).join('');
+  $('calEvents').innerHTML = evts.length
+    ? evts.map(e => `
+        <div class="cal-event-item">
+          <div class="cal-event-date">${formatDate(e.date)}</div>
+          <div class="cal-event-name">${esc(e.name)}</div>
+          <button class="del-btn" onclick="deleteEvent('${e.date}','${e.id}')">✕</button>
+        </div>`).join('')
+    : '<div class="empty-state">No events this month</div>';
 }
 
 function addEvent() {
   const date = $('eventDate').value;
   const name = $('eventName').value.trim();
   if (!date || !name) { toast('FILL DATE + NAME'); return; }
-  const events = ls.get('hexEvents') || [];
-  events.push({ id: Date.now().toString(), date, name });
-  ls.set('hexEvents', events);
+
+  if (!state.events[date]) state.events[date] = [];
+  state.events[date].push({ id: uid(), name });
   $('eventName').value = '';
   renderCal();
+  schedSave();
   toast('EVENT ADDED');
 }
 
-function deleteEvent(id) {
-  const events = (ls.get('hexEvents') || []).filter(e => e.id !== id);
-  ls.set('hexEvents', events);
+function deleteEvent(date, id) {
+  if (!state.events[date]) return;
+  state.events[date] = state.events[date].filter(e => e.id !== id);
+  if (!state.events[date].length) delete state.events[date];
   renderCal();
+  schedSave();
   toast('EVENT REMOVED');
 }
 
-function formatDate(str) {
-  const d = new Date(str + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-}
-
-renderCal();
-
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // TO-DO
-// ──────────────────────────────────────────────
+// data shape: state.todos = [{id, text, priority, done}]
+// ════════════════════════════════════════════════
 let todoFilter = 'all';
 
 function setFilter(f, btn) {
@@ -1001,72 +1255,69 @@ function setFilter(f, btn) {
 }
 
 function renderTodos() {
-  const todos = ls.get('hexTodos') || [];
+  const todos  = state.todos || [];
   let filtered = todos;
-  if (todoFilter === 'done') filtered = todos.filter(t => t.done);
-  else if (todoFilter !== 'all') filtered = todos.filter(t => t.priority === todoFilter && !t.done);
+  if (todoFilter === 'done')       filtered = todos.filter(t => t.done);
+  else if (todoFilter !== 'all')   filtered = todos.filter(t => t.priority === todoFilter && !t.done);
 
-  if (!filtered.length) {
-    $('todoList').innerHTML = '<div class="empty-state">Nothing here</div>';
-    return;
-  }
-
-  $('todoList').innerHTML = filtered.map(t => `
-    <div class="todo-item${t.done?' done':''}">
-      <div class="todo-check" onclick="toggleTodo('${t.id}')"></div>
-      <div class="todo-text">${esc(t.text)}</div>
-      <div class="priority-badge ${t.priority}">${t.priority.toUpperCase()}</div>
-      <button class="del-btn" onclick="deleteTodo('${t.id}')">✕</button>
-    </div>
-  `).join('');
+  $('todoList').innerHTML = filtered.length
+    ? filtered.map(t => `
+        <div class="todo-item${t.done ? ' done' : ''}">
+          <div class="todo-check" onclick="toggleTodo('${t.id}')"></div>
+          <div class="todo-text">${esc(t.text)}</div>
+          <div class="priority-badge ${t.priority}">${t.priority.toUpperCase()}</div>
+          <button class="del-btn" onclick="deleteTodo('${t.id}')">✕</button>
+        </div>`).join('')
+    : '<div class="empty-state">Nothing here</div>';
 }
 
 function addTodo() {
-  const text = $('todoText').value.trim();
+  const text     = $('todoText').value.trim();
   const priority = $('todoPriority').value;
   if (!text) { toast('ENTER TASK TEXT'); return; }
-  const todos = ls.get('hexTodos') || [];
-  todos.unshift({ id: Date.now().toString(), text, priority, done: false });
-  ls.set('hexTodos', todos);
+  state.todos.unshift({ id: uid(), text, priority, done: false });
   $('todoText').value = '';
   renderTodos();
+  schedSave();
   toast('TASK ADDED');
 }
 
 function toggleTodo(id) {
-  const todos = ls.get('hexTodos') || [];
-  const t = todos.find(t => t.id === id);
+  const t = state.todos.find(t => t.id === id);
   if (t) t.done = !t.done;
-  ls.set('hexTodos', todos);
   renderTodos();
+  schedSave();
 }
 
 function deleteTodo(id) {
-  const todos = (ls.get('hexTodos') || []).filter(t => t.id !== id);
-  ls.set('hexTodos', todos);
+  state.todos = state.todos.filter(t => t.id !== id);
   renderTodos();
+  schedSave();
   toast('TASK REMOVED');
 }
 
-renderTodos();
-
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // SPENDING
-// ──────────────────────────────────────────────
-const CATS = ['Food','Transport','Shopping','Bills','Health','Fun'];
-const CAT_COLORS = {
-  Food:      '#00ffcc',
-  Transport: '#00d4aa',
-  Shopping:  '#ffb830',
-  Bills:     '#ff4d6d',
-  Health:    '#a78bfa',
-  Fun:       '#38bdf8'
-};
-
+// data shape: state.spend = { "YYYY-MM": { Food:0, …, entries:[{id,cat,amount,note}] } }
+// ════════════════════════════════════════════════
 let spendDate = new Date();
 
-function spendKey() {
-  return `hexSpend_${spendDate.getFullYear()}_${spendDate.getMonth()}`;
+function todayMonthKey() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function spendMonthKey() {
+  return `${spendDate.getFullYear()}-${String(spendDate.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthData() {
+  const k = spendMonthKey();
+  if (!state.spend[k]) {
+    state.spend[k] = { entries: [] };
+    CATS.forEach(c => { state.spend[k][c] = 0; });
+  }
+  return state.spend[k];
 }
 
 function changeSpendMonth(dir) {
@@ -1075,16 +1326,15 @@ function changeSpendMonth(dir) {
 }
 
 function renderSpending() {
-  const data = ls.get(spendKey()) || { entries: [] };
-  const entries = data.entries || [];
+  const md      = getMonthData();
+  const entries = md.entries || [];
 
-  $('spendMonthLabel').textContent = spendDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  $('spendMonthLabel').textContent = spendDate.toLocaleDateString('en-US', { month:'long', year:'numeric' }).toUpperCase();
 
   const totals = {};
-  CATS.forEach(c => totals[c] = 0);
-  entries.forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
+  CATS.forEach(c => { totals[c] = md[c] || 0; });
 
-  const grandTotal = Object.values(totals).reduce((a,b) => a+b, 0);
+  const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
   $('spendTotal').textContent = '$' + grandTotal.toFixed(2);
 
   const max = Math.max(...Object.values(totals), 1);
@@ -1092,23 +1342,20 @@ function renderSpending() {
     <div class="spend-row">
       <div class="spend-label-row">
         <span class="spend-cat-name">${cat.toUpperCase()}</span>
-        <span class="spend-cat-amount">$${(totals[cat]||0).toFixed(2)}</span>
+        <span class="spend-cat-amount">$${(totals[cat] || 0).toFixed(2)}</span>
       </div>
       <div class="spend-bar-track">
-        <div class="spend-bar-fill" style="width:${(totals[cat]||0)/max*100}%;background:${CAT_COLORS[cat]};box-shadow:0 0 8px ${CAT_COLORS[cat]}60"></div>
+        <div class="spend-bar-fill" style="width:${(totals[cat] || 0) / max * 100}%;background:${CAT_COLORS[cat]};box-shadow:0 0 8px ${CAT_COLORS[cat]}60"></div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 
-  const logEntries = [...entries].reverse().slice(0, 20);
-  $('spendLog').innerHTML = logEntries.length ? logEntries.map(e => `
+  $('spendLog').innerHTML = [...entries].reverse().slice(0, 20).map(e => `
     <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;">
-      <span style="color:${CAT_COLORS[e.cat]};min-width:80px">${e.cat.toUpperCase()}</span>
-      <span style="flex:1;color:var(--text-dim);padding:0 8px">${esc(e.note||'')}</span>
+      <span style="color:${CAT_COLORS[e.cat]};min-width:75px">${e.cat.toUpperCase()}</span>
+      <span style="flex:1;color:var(--text-dim);padding:0 8px">${esc(e.note || '')}</span>
       <span>$${e.amount.toFixed(2)}</span>
       <button class="del-btn" onclick="deleteSpend('${e.id}')">✕</button>
-    </div>
-  `).join('') : '<div class="empty-state">No entries this month</div>';
+    </div>`).join('') || '<div class="empty-state">No entries this month</div>';
 }
 
 function addSpend() {
@@ -1116,70 +1363,69 @@ function addSpend() {
   const amount = parseFloat($('spendAmount').value);
   const note   = $('spendNote').value.trim();
   if (!amount || amount <= 0) { toast('ENTER VALID AMOUNT'); return; }
-  const data = ls.get(spendKey()) || { entries: [] };
-  data.entries.push({ id: Date.now().toString(), cat, amount, note });
-  ls.set(spendKey(), data);
+
+  const md = getMonthData();
+  if (!md.entries) md.entries = [];
+  md.entries.push({ id: uid(), cat, amount, note });
+  md[cat] = (md[cat] || 0) + amount;
+
   $('spendAmount').value = '';
-  $('spendNote').value = '';
+  $('spendNote').value   = '';
   renderSpending();
+  schedSave();
   toast('SPEND LOGGED');
 }
 
 function deleteSpend(id) {
-  const data = ls.get(spendKey()) || { entries: [] };
-  data.entries = data.entries.filter(e => e.id !== id);
-  ls.set(spendKey(), data);
+  const md = getMonthData();
+  const entry = (md.entries || []).find(e => e.id === id);
+  if (entry) {
+    md.entries = md.entries.filter(e => e.id !== id);
+    md[entry.cat] = Math.max(0, (md[entry.cat] || 0) - entry.amount);
+  }
   renderSpending();
+  schedSave();
   toast('ENTRY REMOVED');
 }
 
-renderSpending();
-
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // SUBSCRIPTIONS
-// ──────────────────────────────────────────────
+// data shape: state.subs = [{id, name, cost, renewal}]
+// ════════════════════════════════════════════════
 function daysUntil(dateStr) {
-  const now  = new Date(); now.setHours(0,0,0,0);
-  const tgt  = new Date(dateStr + 'T00:00:00');
-  let diff   = Math.ceil((tgt - now) / 86400000);
-  if (diff < 0) diff += 30; // next cycle approx
-  return diff;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const tgt = new Date(dateStr + 'T00:00:00');
+  let d = Math.ceil((tgt - now) / 86400000);
+  if (d < 0) d = Math.ceil(d % 30.44 + 30.44); // roll to next cycle
+  return d;
 }
 
-function dayColor(days) {
-  if (days <= 3)  return 'red';
-  if (days <= 7)  return 'amber';
-  return 'green';
-}
+function dayColor(d) { return d <= 3 ? 'red' : d <= 7 ? 'amber' : 'green'; }
 
 function renderSubs() {
-  const subs = (ls.get('hexSubs') || []).sort((a,b) => daysUntil(a.renewal) - daysUntil(b.renewal));
+  const subs = [...(state.subs || [])].sort((a, b) => daysUntil(a.renewal) - daysUntil(b.renewal));
 
-  if (!subs.length) {
-    $('subsList').innerHTML = '<div class="empty-state">No subscriptions tracked</div>';
-    return;
-  }
-
-  $('subsList').innerHTML = subs.map(s => {
-    const days = daysUntil(s.renewal);
-    const cls  = dayColor(days);
-    return `
-      <div class="sub-item">
-        <div class="sub-left">
-          <div class="sub-name">${esc(s.name)}</div>
-          <div class="sub-meta">RENEWS ${formatDate(s.renewal)}</div>
-        </div>
-        <div class="sub-right">
-          <div>
-            <div class="sub-days ${cls}">${days}</div>
-            <div class="sub-days-label">DAYS<br>LEFT</div>
-          </div>
-          ${s.cost ? `<div class="sub-cost">$${parseFloat(s.cost).toFixed(2)}/mo</div>` : ''}
-          <button class="del-btn" onclick="deleteSub('${s.id}')">✕</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  $('subsList').innerHTML = subs.length
+    ? subs.map(s => {
+        const days = daysUntil(s.renewal);
+        const cls  = dayColor(days);
+        return `
+          <div class="sub-item">
+            <div class="sub-left">
+              <div class="sub-name">${esc(s.name)}</div>
+              <div class="sub-meta">RENEWS ${formatDate(s.renewal)}</div>
+            </div>
+            <div class="sub-right">
+              <div>
+                <div class="sub-days ${cls}">${days}</div>
+                <div class="sub-days-label">DAYS<br>LEFT</div>
+              </div>
+              ${s.cost ? `<div class="sub-cost">$${parseFloat(s.cost).toFixed(2)}/mo</div>` : ''}
+              <button class="del-btn" onclick="deleteSub('${s.id}')">✕</button>
+            </div>
+          </div>`;
+      }).join('')
+    : '<div class="empty-state">No subscriptions tracked</div>';
 }
 
 function addSub() {
@@ -1187,79 +1433,100 @@ function addSub() {
   const cost    = $('subCost').value;
   const renewal = $('subRenewal').value;
   if (!name || !renewal) { toast('FILL NAME + DATE'); return; }
-  const subs = ls.get('hexSubs') || [];
-  subs.push({ id: Date.now().toString(), name, cost, renewal });
-  ls.set('hexSubs', subs);
+
+  state.subs.push({ id: uid(), name, cost, renewal });
   $('subName').value = '';
   $('subCost').value = '';
   $('subRenewal').value = '';
   renderSubs();
+  schedSave();
   toast('SUBSCRIPTION ADDED');
 }
 
 function deleteSub(id) {
-  const subs = (ls.get('hexSubs') || []).filter(s => s.id !== id);
-  ls.set('hexSubs', subs);
+  state.subs = state.subs.filter(s => s.id !== id);
   renderSubs();
+  schedSave();
   toast('SUBSCRIPTION REMOVED');
 }
 
-renderSubs();
-
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // WHATSAPP COMMANDS
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 const COMMANDS = [
-  { cmd: '!help',                desc: 'Show all available Hex bot commands' },
-  { cmd: '!status',             desc: 'Get current system status' },
+  { cmd: '!help',                      desc: 'Show all available Hex bot commands' },
+  { cmd: '!status',                    desc: 'Get current system status' },
   { cmd: '!remind me [msg] in [time]', desc: 'Set a reminder via Hex bot' },
-  { cmd: '!note [text]',        desc: 'Save a quick note' },
-  { cmd: '!notes',              desc: 'List all saved notes' },
-  { cmd: '!todo [task]',        desc: 'Add task to your to-do list' },
-  { cmd: '!todos',              desc: 'View your to-do list' },
-  { cmd: '!done [task #]',      desc: 'Mark a to-do item as complete' },
-  { cmd: '!spend [amount] [cat]', desc: 'Log a spending entry' },
-  { cmd: '!budget',             desc: 'View monthly budget summary' },
-  { cmd: '!weather [city]',     desc: 'Get weather for a city' },
-  { cmd: '!calc [expression]',  desc: 'Calculate a math expression' },
-  { cmd: '!translate [text]',   desc: 'Translate text to English' },
-  { cmd: '!summarize [url]',    desc: 'Summarize a webpage or article' },
-  { cmd: '!gpt [prompt]',       desc: 'Ask GPT a question via Hex bot' },
-  { cmd: '!ping',               desc: 'Check if bot is online' },
+  { cmd: '!note [text]',               desc: 'Save a quick note' },
+  { cmd: '!notes',                     desc: 'List all saved notes' },
+  { cmd: '!todo [task]',               desc: 'Add task to your to-do list' },
+  { cmd: '!todos',                     desc: 'View your to-do list' },
+  { cmd: '!done [task #]',             desc: 'Mark a to-do item as complete' },
+  { cmd: '!spend [amount] [cat]',      desc: 'Log a spending entry (e.g. !spend 50 Food)' },
+  { cmd: '!budget',                    desc: 'View monthly budget summary' },
+  { cmd: '!subs',                      desc: 'List subscriptions & renewal dates' },
+  { cmd: '!weather [city]',            desc: 'Get weather for a city' },
+  { cmd: '!calc [expression]',         desc: 'Calculate a math expression' },
+  { cmd: '!translate [text]',          desc: 'Translate text to English' },
+  { cmd: '!summarize [url]',           desc: 'Summarize a webpage or article' },
+  { cmd: '!gpt [prompt]',              desc: 'Ask GPT a question via Hex bot' },
+  { cmd: '!ping',                      desc: 'Check if bot is online' },
 ];
 
 function renderCommands() {
   $('cmdGrid').innerHTML = COMMANDS.map(c => `
-    <div class="cmd-item" onclick="copyCmd(this,'${c.cmd.replace(/'/g,"\\'")}')">
+    <div class="cmd-item" onclick="copyCmd(this,${JSON.stringify(c.cmd)})">
       <div class="cmd-command">${esc(c.cmd)}</div>
       <div class="cmd-desc">${esc(c.desc)}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function copyCmd(el, cmd) {
-  navigator.clipboard.writeText(cmd).then(() => {
-    el.classList.add('copied');
-    setTimeout(() => el.classList.remove('copied'), 1200);
-    toast('COPIED: ' + cmd);
-  }).catch(() => {
-    toast('COPY FAILED');
-  });
+  navigator.clipboard.writeText(cmd)
+    .then(() => {
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 1200);
+      toast('COPIED: ' + cmd);
+    })
+    .catch(() => toast('COPY FAILED'));
 }
 
-renderCommands();
-
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 // HELPERS
-// ──────────────────────────────────────────────
+// ════════════════════════════════════════════════
 function esc(str) {
   if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Set today's date as default for event input
-$('eventDate').value = new Date().toISOString().slice(0,10);
-$('subRenewal').value = new Date().toISOString().slice(0,10);
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function fmtDateKey(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function formatDate(str) {
+  return new Date(str + 'T00:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function scrollToCard(id) { $(id).scrollIntoView({ behavior:'smooth', block:'start' }); }
+
+// ════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════
+$('eventDate').value   = new Date().toISOString().slice(0, 10);
+$('subRenewal').value  = new Date().toISOString().slice(0, 10);
+
+loadData().then(startPoll);
 </script>
 </body>
 </html>
