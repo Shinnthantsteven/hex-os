@@ -917,7 +917,7 @@ const $ = id => document.getElementById(id);
 const CATS = ['Food','Transport','Shopping','Bills','Health','Fun'];
 const CAT_COLORS = { Food:'#00ffcc', Transport:'#00d4aa', Shopping:'#ffb830', Bills:'#ff4d6d', Health:'#a78bfa', Fun:'#38bdf8' };
 
-let ghToken  = GH_TOKEN_HARDCODED || localStorage.getItem('hexGhToken') || '';
+let ghToken  = GH_TOKEN_HARDCODED || localStorage.getItem('hex_github_token') || '';
 let fileSha  = null;
 let saveTimer = null;
 let pollTimer = null;
@@ -967,8 +967,9 @@ async function ghGet() {
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
     fileSha = j.sha;
-    // Decode base64 → UTF-8 → JSON
-    const raw = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g, '')))));
+    // Decode base64 → UTF-8 → JSON (TextDecoder handles multi-byte chars correctly)
+    const bytes = Uint8Array.from(atob(j.content.replace(/\s/g, '')), c => c.charCodeAt(0));
+    const raw = JSON.parse(new TextDecoder().decode(bytes));
     return raw;
   } catch (e) {
     setSyncStatus('error');
@@ -979,7 +980,11 @@ async function ghGet() {
 async function ghPut(data) {
   if (!ghToken) { setSyncStatus('notoken'); return false; }
   const json    = JSON.stringify(data, null, 2);
-  const content = btoa(unescape(encodeURIComponent(json)));
+  // Encode UTF-8 → base64 (TextEncoder handles multi-byte chars correctly)
+  const bytes2  = new TextEncoder().encode(json);
+  let binary = '';
+  for (const b of bytes2) binary += String.fromCharCode(b);
+  const content = btoa(binary);
   const body    = { message: 'HEX OS sync', content };
   if (fileSha) body.sha = fileSha;
 
@@ -1095,8 +1100,8 @@ function closeTokenModal() { $('tokenModal').classList.remove('open'); }
 function saveToken() {
   const t = $('tokenInput').value.trim();
   ghToken = t;
-  if (t) localStorage.setItem('hexGhToken', t);
-  else   localStorage.removeItem('hexGhToken');
+  if (t) localStorage.setItem('hex_github_token', t);
+  else   localStorage.removeItem('hex_github_token');
   closeTokenModal();
   fileSha = null;
   loadData();
@@ -1104,7 +1109,7 @@ function saveToken() {
 
 function clearToken() {
   ghToken = '';
-  localStorage.removeItem('hexGhToken');
+  localStorage.removeItem('hex_github_token');
   $('tokenInput').value = '';
   closeTokenModal();
   setSyncStatus('notoken');
@@ -1279,7 +1284,19 @@ function addTodo() {
   $('todoText').value = '';
   renderTodos();
   schedSave();
+  notifyReminders(text, priority);
   toast('TASK ADDED');
+}
+
+// Silently POST to the local sync-reminders.py server (port 7432).
+// If the server isn't running the request simply times out with no error shown.
+function notifyReminders(text, priority) {
+  fetch('http://localhost:7432/reminder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, priority }),
+    signal: AbortSignal.timeout(1500),
+  }).catch(() => {});
 }
 
 function toggleTodo(id) {
