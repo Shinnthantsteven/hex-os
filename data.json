@@ -132,116 +132,6 @@
       "source": "mail"
     }
   ],
-  "transactions": [
-    {
-      "id": "txn_fdaaa926",
-      "merchant": "Apple",
-      "category": "Other",
-      "amount": null,
-      "currency": "AED",
-      "date": "",
-      "subject": "We're processing your order W1515015827"
-    },
-    {
-      "id": "txn_52b860be",
-      "merchant": "Txn-Email03",
-      "category": "Other",
-      "amount": null,
-      "currency": "AED",
-      "date": "",
-      "subject": "Thank You For Your Purchase"
-    },
-    {
-      "id": "txn_cc12ec18",
-      "merchant": "Txn-Email03",
-      "category": "Other",
-      "amount": null,
-      "currency": "AED",
-      "date": "2024-08-28",
-      "subject": "Thank You For Your Purchase"
-    },
-    {
-      "id": "txn_adafd536",
-      "merchant": "Noon",
-      "category": "Other",
-      "amount": null,
-      "currency": "AED",
-      "date": "2024-06-06",
-      "subject": "Items from your order NAEG50026438357 are out for delivery."
-    }
-  ],
-  "important_emails": [
-    {
-      "id": "imp_4acb30a8",
-      "subject": "🚨 Action Required: Finalize Your Booking 15127133 Now!",
-      "sender": "12Go <15127133@b.12go.asia>",
-      "date": "2024-10-12",
-      "type": "urgent"
-    },
-    {
-      "id": "imp_1899ec3e",
-      "subject": "RE: Changing Flight schedule date",
-      "sender": "Contact Us <contactus@makemytrip.com>",
-      "date": "2024-10-11",
-      "type": "flight"
-    },
-    {
-      "id": "imp_797d4886",
-      "subject": "Automatic reply: Request for Flight Change or Cancellation Due to Incorrect Timing",
-      "sender": "Service <Service@makemytrip.com>",
-      "date": "2024-10-11",
-      "type": "flight"
-    },
-    {
-      "id": "imp_fa15ce4b",
-      "subject": "Tax Invoice for your Flight Booking id AN2AAIGT85877307169",
-      "sender": "MakeMyTrip <noreply@makemytrip.com>",
-      "date": "2024-10-11",
-      "type": "flight"
-    },
-    {
-      "id": "imp_9bc29c87",
-      "subject": "Important Update Regarding Your Flight Booking ID: AN2AAIGT85877307169",
-      "sender": "MakeMyTrip <noreply@makemytrip.com>",
-      "date": "2024-10-11",
-      "type": "flight"
-    },
-    {
-      "id": "imp_20c49081",
-      "subject": "Dubai – Hanoi flight booking details",
-      "sender": "Booking.com <noreply@booking.com>",
-      "date": "",
-      "type": "flight"
-    },
-    {
-      "id": "imp_a0e8f73f",
-      "subject": "Interview Schedule",
-      "sender": "Brecks Group <f.jacob@brecksgroup.com>",
-      "date": "",
-      "type": "job"
-    },
-    {
-      "id": "imp_a7d8a300",
-      "subject": "IIQAF: We've received your job application",
-      "sender": "IIQAF <iiqaf-14459063-191044-8c026@inbound.gohire-mail.com>",
-      "date": "",
-      "type": "notice"
-    },
-    {
-      "id": "imp_82a4439a",
-      "subject": "Interview Reschedule",
-      "sender": "Freya <info@brecksgroup.com>",
-      "date": "",
-      "type": "job"
-    },
-    {
-      "id": "imp_7a9a3e86",
-      "subject": "IIQAF: We've received your job application",
-      "sender": "IIQAF <iiqaf-14399272-188017-5c1b3@inbound.gohire-mail.com>",
-      "date": "2024-08-31",
-      "type": "notice"
-    }
-  ],
   "spend": {
     "Food": 0,
     "Transport": 0,
@@ -250,15 +140,13 @@
     "Health": 0,
     "Fun": 0
   },
-  "updated": "2026-04-26T05:21:54.438Z",
+  "updated": "2026-04-26T05:23:25.060Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-26T05:21:54.438Z",
+    "synced_at": "2026-04-26T05:23:25.060Z",
     "reminders": 9,
     "events": 5,
-    "subs": 1,
-    "txns": 4,
-    "important": 10
+    "subs": 1
   }
 }
