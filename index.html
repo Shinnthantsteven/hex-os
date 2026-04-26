@@ -549,6 +549,101 @@ main {
 .sub-days-lbl { font-size: 8px; color: var(--dim); text-align: right; line-height: 1.3; }
 .sub-cost { font-size: 10px; color: var(--dim); }
 
+/* ── TRANSACTIONS ── */
+.txn-card { grid-column: span 6; }
+
+.txn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.txn-total {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.txn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.txn-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  transition: border-color 0.18s;
+}
+
+.txn-item:hover { border-color: var(--accent-border); }
+
+.txn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.txn-merchant { font-size: 12px; line-height: 1.3; }
+.txn-cat      { font-size: 9px; letter-spacing: 1px; margin-top: 2px; }
+.txn-amount   { font-family: 'Bebas Neue', sans-serif; font-size: 14px; }
+.txn-date     { font-size: 9px; color: var(--dim); text-align: right; }
+
+/* ── IMPORTANT EMAILS ── */
+.imp-card { grid-column: span 6; }
+
+.imp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.imp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  transition: border-color 0.18s;
+}
+
+.imp-item:hover { border-color: var(--accent-border); }
+
+.imp-type-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.imp-body    { flex: 1; min-width: 0; }
+.imp-subject { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-meta    { font-size: 9px; color: var(--dim); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.imp-badge {
+  font-size: 8px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 /* ── WHATSAPP COMMANDS ── */
 .wa-card { grid-column: span 12; }
 
@@ -706,7 +801,8 @@ select option { background: var(--bg2); }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
-  .calendar-card, .todo-card, .spending-card, .subs-card { grid-column: span 12; }
+  .calendar-card, .todo-card, .spending-card, .subs-card,
+  .txn-card, .imp-card { grid-column: span 12; }
 }
 
 @media (max-width: 640px) {
@@ -740,6 +836,8 @@ select option { background: var(--bg2); }
   <button class="nav-tab" onclick="scrollTo('todo-section')">TODOS</button>
   <button class="nav-tab" onclick="scrollTo('spend-section')">SPENDING</button>
   <button class="nav-tab" onclick="scrollTo('subs-section')">SUBS</button>
+  <button class="nav-tab" onclick="scrollTo('txn-section')">TXNS</button>
+  <button class="nav-tab" onclick="scrollTo('imp-section')">IMPORTANT</button>
   <button class="nav-tab" onclick="scrollTo('wa-section')">COMMANDS</button>
 </nav>
 
@@ -820,13 +918,34 @@ select option { background: var(--bg2); }
     <div class="spend-log" id="spendLog"></div>
   </div>
 
-  <!-- ── SUBSCRIPTIONS (from Gmail) ── -->
+  <!-- ── SUBSCRIPTIONS (from Mail) ── -->
   <div class="card subs-card" id="subs-section">
     <div class="card-title">
       <span class="icon">◪</span> SUBSCRIPTIONS
-      <span class="src-badge">FROM GMAIL</span>
+      <span class="src-badge">FROM MAIL</span>
     </div>
     <div class="subs-list" id="subsList"></div>
+  </div>
+
+  <!-- ── TRANSACTIONS (from Mail) ── -->
+  <div class="card txn-card" id="txn-section">
+    <div class="txn-header">
+      <div class="card-title" style="margin:0"><span class="icon">◈</span> TRANSACTIONS</div>
+      <div style="text-align:right">
+        <div class="txn-total" id="txnTotal">0 AED</div>
+        <div style="font-size:9px;color:var(--dim);margin-top:2px">THIS MONTH</div>
+      </div>
+    </div>
+    <div class="txn-list" id="txnList"></div>
+  </div>
+
+  <!-- ── IMPORTANT EMAILS (from Mail) ── -->
+  <div class="card imp-card" id="imp-section">
+    <div class="card-title">
+      <span class="icon">◉</span> IMPORTANT EMAILS
+      <span class="src-badge">FROM MAIL</span>
+    </div>
+    <div class="imp-list" id="impList"></div>
   </div>
 
   <!-- ── WHATSAPP COMMANDS ── -->
@@ -852,6 +971,17 @@ const CAT_COLOR = { Food:'#00ffcc', Transport:'#00d4aa', Shopping:'#ffb830',
                     Bills:'#ff4d6d', Health:'#a78bfa', Fun:'#38bdf8' };
 const PRI_COLOR = { high:'#ff4d6d', mid:'#ffb830', low:'#00ffcc' };
 
+const TXN_CAT_COLOR = {
+  Food:'#00ffcc', Transport:'#38bdf8', Shopping:'#a78bfa',
+  Bills:'#ff4d6d', Health:'#00d4aa', Fun:'#ffb830', Other:'#6e6e8a', bnpl:'#ff4d6d',
+};
+
+const IMP_TYPE_COLOR = {
+  flight:'#38bdf8', hotel:'#00d4aa', government:'#ff4d6d',
+  insurance:'#ffb830', job:'#00ffcc', statement:'#a78bfa',
+  urgent:'#ff4d6d', notice:'#6e6e8a',
+};
+
 // ── For spending writes we still use the GitHub API with a token ──
 // Token is only needed if you want to log spending from the browser.
 // hex-sync.py handles all other writes automatically.
@@ -865,7 +995,7 @@ const API_URL  = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/$
 // ════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 
-let state = { todos:[], events:{}, spend:{}, subs:[], updated:'', sync_info:{} };
+let state = { todos:[], events:{}, spend:{}, subs:[], transactions:[], important_emails:[], updated:'', sync_info:{} };
 let fileSha    = null;
 let spendDate  = new Date();
 let calDate    = new Date();
@@ -935,7 +1065,7 @@ function lastSyncLine(raw) {
   if (si.synced_at) {
     const ago = Math.round((Date.now() - new Date(si.synced_at)) / 60000);
     const agoStr = ago < 1 ? 'just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
-    return `hex-sync ran ${agoStr} · ${si.reminders||0} todos · ${si.events||0} events · ${si.subs||0} subs`;
+    return `hex-sync ran ${agoStr} · ${si.reminders||0} todos · ${si.events||0} events · ${si.subs||0} subs · ${si.txns||0} txns`;
   }
   if (raw.updated) {
     return `updated ${new Date(raw.updated).toLocaleTimeString()}`;
@@ -952,12 +1082,14 @@ function normalise(raw) {
     CATS.forEach(c => { spend[mk][c] = prev[c] || 0; });
   }
   return {
-    todos:     Array.isArray(raw.todos)  ? raw.todos : [],
-    events:    (raw.events && !Array.isArray(raw.events)) ? raw.events : {},
-    subs:      Array.isArray(raw.subs)   ? raw.subs  : [],
+    todos:           Array.isArray(raw.todos)            ? raw.todos            : [],
+    events:          (raw.events && !Array.isArray(raw.events)) ? raw.events   : {},
+    subs:            Array.isArray(raw.subs)             ? raw.subs             : [],
+    transactions:    Array.isArray(raw.transactions)     ? raw.transactions     : [],
+    important_emails:Array.isArray(raw.important_emails) ? raw.important_emails : [],
     spend,
-    updated:   raw.updated   || '',
-    sync_info: raw.sync_info || {},
+    updated:         raw.updated   || '',
+    sync_info:       raw.sync_info || {},
   };
 }
 
@@ -1240,9 +1372,10 @@ function renderSubs() {
 
   $('subsList').innerHTML = subs.length
     ? subs.map(s => {
-        const d   = s.renewal ? daysUntil(s.renewal) : null;
-        const cls = d !== null ? dayCls(d) : 'green';
-        const cost = s.cost ? `$${parseFloat(s.cost).toFixed(2)}/mo` : '';
+        const d    = s.renewal ? daysUntil(s.renewal) : null;
+        const cls  = d !== null ? dayCls(d) : 'green';
+        const cur  = s.currency || 'AED';
+        const cost = s.cost ? `${parseFloat(s.cost).toFixed(2)} ${cur}/mo` : '';
         return `
           <div class="sub-item">
             <div class="sub-left">
@@ -1251,11 +1384,70 @@ function renderSubs() {
             </div>
             <div class="sub-right">
               ${d !== null ? `<div><div class="sub-days ${cls}">${d}</div><div class="sub-days-lbl">DAYS<br>LEFT</div></div>` : ''}
-              ${cost ? `<div class="sub-cost">${cost}</div>` : ''}
+              ${cost ? `<div class="sub-cost">${esc(cost)}</div>` : ''}
             </div>
           </div>`;
       }).join('')
-    : '<div class="empty">No subscriptions found — run check-subscriptions.py or hex-sync.py</div>';
+    : '<div class="empty">No subscriptions found — run hex-sync.py</div>';
+}
+
+// ════════════════════════════════════════════════════════════════
+// TRANSACTIONS  (from Mail via hex-sync.py)
+// ════════════════════════════════════════════════════════════════
+function renderTransactions() {
+  const txns = state.transactions || [];
+
+  // Month total (AED only — ignore USD for now)
+  const now = new Date();
+  const curMo = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+  const monthTotal = txns
+    .filter(t => t.date && t.date.startsWith(curMo) && t.amount != null && t.currency === 'AED')
+    .reduce((s, t) => s + t.amount, 0);
+
+  $('txnTotal').textContent = monthTotal.toFixed(2) + ' AED';
+
+  const sorted = [...txns].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 30);
+
+  $('txnList').innerHTML = sorted.length
+    ? sorted.map(t => {
+        const col = TXN_CAT_COLOR[t.category] || '#6e6e8a';
+        const amt = t.amount != null ? `${t.amount.toFixed(2)} ${t.currency||'AED'}` : '—';
+        return `
+          <div class="txn-item">
+            <div class="txn-dot" style="background:${col};box-shadow:0 0 6px ${col}55"></div>
+            <div style="flex:1;min-width:0">
+              <div class="txn-merchant">${esc(t.merchant||'Unknown')}</div>
+              <div class="txn-cat" style="color:${col}">${(t.category||'Other').toUpperCase()}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="txn-amount" style="color:${col}">${esc(amt)}</div>
+              <div class="txn-date">${t.date ? fmtDate(t.date) : '—'}</div>
+            </div>
+          </div>`;
+      }).join('')
+    : '<div class="empty">No transactions found — run hex-sync.py</div>';
+}
+
+// ════════════════════════════════════════════════════════════════
+// IMPORTANT EMAILS  (from Mail via hex-sync.py)
+// ════════════════════════════════════════════════════════════════
+function renderImportantEmails() {
+  const emails = state.important_emails || [];
+
+  $('impList').innerHTML = emails.length
+    ? emails.map(e => {
+        const col = IMP_TYPE_COLOR[e.type] || '#6e6e8a';
+        return `
+          <div class="imp-item">
+            <div class="imp-type-dot" style="background:${col};box-shadow:0 0 6px ${col}55"></div>
+            <div class="imp-body">
+              <div class="imp-subject">${esc(e.subject)}</div>
+              <div class="imp-meta">${esc(e.sender)} · ${e.date ? fmtDate(e.date) : '—'}</div>
+            </div>
+            <div class="imp-badge" style="background:${col}22;color:${col};border:1px solid ${col}44">${(e.type||'notice').toUpperCase()}</div>
+          </div>`;
+      }).join('')
+    : '<div class="empty">No important emails found — run hex-sync.py</div>';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1305,6 +1497,8 @@ function renderAll() {
   renderTodos();
   renderSpending();
   renderSubs();
+  renderTransactions();
+  renderImportantEmails();
 }
 
 // ════════════════════════════════════════════════════════════════
