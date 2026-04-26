@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 HEX OS — hex-sync.py
-Reads Mac Reminders, Calendar, and Gmail then writes everything to
+Reads Mac Reminders, Calendar, and Mac Mail then writes everything to
 data.json on GitHub. Runs forever with 5-minute intervals.
 
 TOKEN FILE : ~/.openclaw/github_token          (GitHub PAT, repo scope)
-GMAIL FILE : ~/.openclaw/gmail_app_password    (Gmail 16-char App Password)
 
 USAGE
   python3 hex-sync.py              # run forever (Ctrl+C to stop)
@@ -14,17 +13,12 @@ USAGE
 
 FIRST RUN
   1. GitHub token → paste into ~/.openclaw/github_token
-  2. Gmail App Password (optional) →
-       Gmail Settings → Forwarding/IMAP → Enable IMAP
-       myaccount.google.com → Security → App Passwords → Mail/Mac
-       Paste the 16-char password into ~/.openclaw/gmail_app_password
-  3. When prompted, allow Terminal to access Reminders + Calendar in
+  2. When prompted, allow Terminal to access Reminders, Calendar, and Mail in
      System Preferences → Privacy & Security → Automation
 """
 
-import os, sys, json, base64, time, subprocess, signal, imaplib
-import email, argparse, re, hashlib, traceback
-from email.header import decode_header as _decode_header
+import os, sys, json, base64, time, subprocess, signal
+import argparse, re, hashlib, traceback
 from datetime import datetime, timezone, timedelta, date
 from pathlib import Path
 import urllib.request, urllib.error
@@ -32,17 +26,14 @@ import urllib.request, urllib.error
 # ── CONFIG ───────────────────────────────────────────────────────
 OPENCLAW_DIR   = Path.home() / '.openclaw'
 GH_TOKEN_FILE  = OPENCLAW_DIR / 'github_token'
-GMAIL_PASS_FILE= OPENCLAW_DIR / 'gmail_app_password'
 
 GH_OWNER       = 'Shinnthantsteven'
 GH_REPO        = 'hex-os'
 GH_FILE        = 'data.json'
-GMAIL_USER     = 'shinnthantsteven@gmail.com'
-GMAIL_HOST     = 'imap.gmail.com'
 
 SYNC_INTERVAL  = 300           # seconds between syncs (5 minutes)
 CAL_DAYS_AHEAD = 7             # how many days of Calendar events to fetch
-GMAIL_DAYS_BACK= 60            # how far back to scan Gmail
+MAIL_MSGS_PER_INBOX = 50       # last N messages to scan per Mail inbox
 
 VERSION        = '1.0'
 API_URL        = f'https://api.github.com/repos/{GH_OWNER}/{GH_REPO}/contents/{GH_FILE}'
@@ -103,10 +94,11 @@ DATE_RES = [
     re.compile(r'\b(\d{1,2})/(\d{1,2})/(20\d{2})\b'),
 ]
 AMOUNT_RE = re.compile(
-    r'(?:USD\s*|\$\s*|US\$\s*)(\d{1,4}(?:\.\d{2})?)'
-    r'|(\d{1,4}(?:\.\d{2})?)\s*(?:USD|usd)',
+    r'(?:AED\s*|USD\s*|\$\s*|US\$\s*)(\d{1,4}(?:\.\d{2})?)'
+    r'|(\d{1,4}(?:\.\d{2})?)\s*(?:AED|USD)',
     re.IGNORECASE,
 )
+CURRENCY_RE = re.compile(r'\b(AED|USD|\$)', re.IGNORECASE)
 
 # ── HELPERS ───────────────────────────────────────────────────────
 
@@ -116,9 +108,11 @@ def read_secret(path: Path, env_var: str = '') -> str:
         v = os.environ.get(env_var, '').strip()
         if v:
             return v
+    if not os.path.exists(path):
+        return ''
     try:
         return path.read_text().strip()
-    except FileNotFoundError:
+    except OSError:
         return ''
 
 def uid(prefix=''):
@@ -174,61 +168,67 @@ def gh_put(data: dict, sha: str, msg: str = 'hex-sync update') -> str:
             raise RuntimeError('SHA conflict') from e
         raise
 
-# ── REMINDERS (JXA) ──────────────────────────────────────────────
+# ── REMINDERS (AppleScript) ──────────────────────────────────────
 
-REMINDERS_JXA = r"""
-var app = Application('Reminders');
-var result = [];
-try {
-    var lists = app.lists();
-    for (var i = 0; i < lists.length; i++) {
-        try {
-            var rems = lists[i].reminders();
-            for (var j = 0; j < rems.length; j++) {
-                try {
-                    var r = rems[j];
-                    if (r.completed()) continue;
-                    var p = 0;
-                    try { p = r.priority(); } catch(e) {}
-                    var due = null;
-                    try { var d = r.dueDate(); if (d) due = d.toISOString(); } catch(e) {}
-                    result.push({
-                        id:       'rem_' + r.id(),
-                        text:     r.name(),
-                        priority: p >= 9 ? 'high' : (p >= 5 ? 'mid' : 'low'),
-                        done:     false,
-                        dueDate:  due,
-                        list:     lists[i].name(),
-                        source:   'reminders'
-                    });
-                } catch(e) {}
-            }
-        } catch(e) {}
-    }
-} catch(e) {}
-JSON.stringify(result);
-"""
+REMINDERS_AS = '''tell application "Reminders"
+    set output to ""
+    repeat with aList in every list
+        set listName to name of aList
+        set theReminders to (every reminder of aList whose completed is false)
+        repeat with r in theReminders
+            set rName to name of r
+            set output to output & listName & "|" & rName & "\n"
+        end repeat
+    end repeat
+    return output
+end tell'''
 
 def read_reminders() -> list:
-    """Read all incomplete reminders from the Mac Reminders app."""
+    """
+    Read all incomplete reminders from the Mac Reminders app via AppleScript.
+    Returns a list of todo dicts: {id, text, priority, done, list, source}.
+    """
     try:
         r = subprocess.run(
-            ['osascript', '-l', 'JavaScript', '-e', REMINDERS_JXA],
-            capture_output=True, text=True, timeout=30,
+            ['osascript', '-e', REMINDERS_AS],
+            capture_output=True, text=True, timeout=60,
         )
         if r.returncode != 0:
-            log(f'Reminders JXA error: {r.stderr.strip()[:200]}')
+            log(f'Reminders AppleScript error: {r.stderr.strip()[:200]}')
             return []
         out = r.stdout.strip()
         if not out:
             return []
-        return json.loads(out)
     except subprocess.TimeoutExpired:
-        log('Reminders JXA timed out')
+        log('Reminders AppleScript timed out after 60s')
         return []
     except Exception as e:
         log(f'Reminders read failed: {e}')
         return []
+
+    todos = []
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split('|', 1)
+        if len(parts) != 2:
+            continue
+        list_name, text = parts[0].strip(), parts[1].strip()
+        if not text:
+            continue
+        # Derive a stable id from list+text so re-runs don't create duplicates
+        import hashlib as _hl
+        stable_id = 'rem_' + _hl.md5(f'{list_name}|{text}'.encode()).hexdigest()[:12]
+        todos.append({
+            'id':       stable_id,
+            'text':     text,
+            'priority': 'mid',   # AppleScript output doesn't include priority; default mid
+            'done':     False,
+            'list':     list_name,
+            'source':   'reminders',
+        })
+    return todos
 
 # ── CALENDAR (JXA) ────────────────────────────────────────────────
 
@@ -310,34 +310,185 @@ def read_calendar(days_ahead: int = CAL_DAYS_AHEAD) -> dict:
             pass
     return keyed
 
-# ── GMAIL (IMAP) ──────────────────────────────────────────────────
+# ── MAC MAIL (APPLESCRIPT) ────────────────────────────────────────
 
-def gmail_pass() -> str:
-    return read_secret(GMAIL_PASS_FILE, 'HEX_GMAIL_PASS')
+# Read the last 100 messages from the INBOX of both named accounts only.
+MAIL_ACCOUNTS = ['shinnthantsteven@icloud.com', 'shinnthantsteven@gmail.com']
 
-def _decode_hdr(val: str) -> str:
-    parts = _decode_header(val)
-    out = []
-    for raw, enc in parts:
-        if isinstance(raw, bytes):
-            out.append(raw.decode(enc or 'utf-8', errors='replace'))
-        else:
-            out.append(raw)
-    return ' '.join(out)
+MAIL_AS = '''tell application "Mail"
+    set targetAccounts to {"shinnthantsteven@icloud.com", "shinnthantsteven@gmail.com"}
+    set output to ""
+    repeat with anAccount in every account
+        set acctAddr to email addresses of anAccount
+        set acctMatch to false
+        repeat with addr in acctAddr
+            if addr is in targetAccounts then
+                set acctMatch to true
+                exit repeat
+            end if
+        end repeat
+        if not acctMatch then
+        else
+            try
+                set inboxMB to mailbox "INBOX" of anAccount
+                set msgs to messages of inboxMB
+                set total to count of msgs
+                set startI to total - 99
+                if startI < 1 then set startI to 1
+                repeat with i from startI to total
+                    try
+                        set m to message i of inboxMB
+                        set mSender to sender of m
+                        set mSubject to subject of m
+                        set mDate to date received of m
+                        set output to output & mSender & "|||" & mSubject & "|||" & (mDate as string) & "\n"
+                    end try
+                end repeat
+            end try
+        end if
+    end repeat
+    return output
+end tell'''
 
-def _email_text(msg) -> str:
-    parts = []
-    if msg.is_multipart():
-        for part in msg.walk():
-            if part.get_content_type() == 'text/plain':
-                p = part.get_payload(decode=True)
-                if p:
-                    parts.append(p.decode(part.get_content_charset() or 'utf-8', errors='replace'))
-    else:
-        p = msg.get_payload(decode=True)
-        if p:
-            parts.append(p.decode(msg.get_content_charset() or 'utf-8', errors='replace'))
-    return '\n'.join(parts)
+# ── Spam/noise filters — skip if subject matches any of these ────
+SKIP_RE = re.compile(
+    r'\b(unsubscribe|newsletter|weekly\s+digest|daily\s+digest|'
+    r'top\s+stories|trending\s+now|here\'s\s+what|you\s+may\s+like|'
+    r'recommended\s+for\s+you|new\s+follower|liked\s+your|commented\s+on|'
+    r'friend\s+request|people\s+you\s+may\s+know|'
+    r'sale|off\s+today|limited\s+offer|exclusive\s+deal|shop\s+now|'
+    r'flash\s+sale|% off|promo\s+code|coupon)\b',
+    re.IGNORECASE,
+)
+
+# ── Transaction keyword triggers ────────────────────────────────
+TXN_KW = re.compile(
+    r'\b(charged|payment\s+(made|processed|received|confirmation)|'
+    r'debit\s+(alert|notification|order)|credit\s+(alert|notification)|'
+    r'transfer\s+(sent|received|confirmation)|deposit|withdraw|'
+    r'purchase\s+confirm|transaction\s+(alert|notification|complete)|'
+    r'apple\s+pay|google\s+pay|spent|amount\s+due|bill\s+paid|'
+    r'your\s+(order|purchase|payment|receipt)|receipt\s+for)\b',
+    re.IGNORECASE,
+)
+
+# ── Subscription keyword triggers ───────────────────────────────
+SUB_KW = re.compile(
+    r'\b(subscription|renewal|auto.?renew|trial\s+end|'
+    r'your\s+(plan|membership)|billing\s+(date|cycle|period)|'
+    r'invoice|next\s+charge|will\s+be\s+charged)\b',
+    re.IGNORECASE,
+)
+
+# ── Important email triggers ─────────────────────────────────────
+IMP_RE = re.compile(
+    r'\b(flight|booking\s*confirm|e.?ticket|boarding\s*pass|itinerary|'
+    r'hotel\s*(booking|confirm|reserv)|check.in|reservation\s*confirm|'
+    r'ILOE|insurance\s*(policy|renewal|confirm)|takaful|'
+    r'government|ministry|municipality|DEWA|AMAN|SEWA|ICP|GDRFA|DLD|'
+    r'RTA\s*fine|traffic\s*fine|'
+    r'job\s*(offer|application)|interview|we\s*want\s*to\s*invite|hiring|'
+    r'bank\s+statement|account\s+statement|'
+    r'urgent|action\s+required|important\s+notice|verify\s+your\s+account)\b',
+    re.IGNORECASE,
+)
+
+IMP_TYPE_RE = [
+    (re.compile(r'\b(flight|boarding\s*pass|e.?ticket|itinerary)\b',                                    re.I), 'flight'),
+    (re.compile(r'\b(hotel|check.in|reservation)\b',                                                    re.I), 'hotel'),
+    (re.compile(r'\b(ILOE|GDRFA|ICP|DLD|municipality|ministry|government|RTA|DEWA|AMAN|SEWA|traffic\s*fine)\b', re.I), 'government'),
+    (re.compile(r'\b(insurance|takaful|policy)\b',                                                      re.I), 'insurance'),
+    (re.compile(r'\b(interview|job\s*offer|hiring|we\s*want\s*to\s*invite)\b',                          re.I), 'job'),
+    (re.compile(r'\b(bank\s*statement|account\s*statement)\b',                                          re.I), 'statement'),
+    (re.compile(r'\b(urgent|action\s*required|important\s*notice|verify)\b',                            re.I), 'urgent'),
+]
+
+# ── Subscription service patterns ────────────────────────────────
+SUB_KEYWORDS = {
+    'netflix':         'Netflix',
+    'spotify':         'Spotify',
+    'adobe':           'Adobe',
+    'icloud':          'iCloud+',
+    'apple one':       'Apple One',
+    'apple tv':        'Apple TV+',
+    'youtube premium': 'YouTube Premium',
+    'amazon prime':    'Amazon Prime',
+    'microsoft 365':   'Microsoft 365',
+    'office 365':      'Microsoft 365',
+    'github':          'GitHub',
+    'chatgpt':         'OpenAI',
+    'claude':          'Claude',
+    'dropbox':         'Dropbox',
+    'notion':          'Notion',
+    'figma':           'Figma',
+    'canva':           'Canva',
+    'grammarly':       'Grammarly',
+    '1password':       '1Password',
+    'expressvpn':      'ExpressVPN',
+    'nordvpn':         'NordVPN',
+    'proton':          'Proton',
+    'google one':      'Google One',
+    'zoom':            'Zoom',
+    'linear':          'Linear',
+    'vercel':          'Vercel',
+    'digitalocean':    'DigitalOcean',
+    'tabby':           'Tabby',
+    'tamara':          'Tamara',
+    'noon':            'Noon',
+}
+
+# ── Transaction auto-category rules (order: specific → generic) ──
+TXN_CAT_RULES = [
+    # Banks / transfers first — before merchant checks
+    (re.compile(r'\b(ENBD|Emirates\s*NBD|Emirates\s*National\s*Bank)\b', re.I), 'Bills',     'ENBD'),
+    (re.compile(r'\b(FAB|First\s*Abu\s*Dhabi\s*Bank)\b',                 re.I), 'Bills',     'FAB'),
+    (re.compile(r'\b(ADCB|Abu\s*Dhabi\s*Commercial\s*Bank)\b',           re.I), 'Bills',     'ADCB'),
+    (re.compile(r'\b(Mashreq|Mashreqbank)\b',                             re.I), 'Bills',     'Mashreq'),
+    (re.compile(r'\b(RAKBANK|RAK\s*Bank)\b',                             re.I), 'Bills',     'RAKBANK'),
+    (re.compile(r'\b(CBD|Commercial\s*Bank\s*of\s*Dubai)\b',             re.I), 'Bills',     'CBD'),
+    # Health
+    (re.compile(r'\b(pharmacy|clinic|hospital|doctor|health|medical|dental|vision|DHA|HAAD)\b', re.I), 'Health', None),
+    # Food delivery (before generic Careem)
+    (re.compile(r'\bTalabat\b',               re.I), 'Food',      'Talabat'),
+    (re.compile(r'\bNoon\s*Food\b',           re.I), 'Food',      'Noon Food'),
+    (re.compile(r'\bCareem\s*(Food|Eats)\b',  re.I), 'Food',      'Careem Food'),
+    # Grocery
+    (re.compile(r'\bCarrefour\b',             re.I), 'Shopping',  'Carrefour'),
+    (re.compile(r'\bSpinneys\b',              re.I), 'Shopping',  'Spinneys'),
+    (re.compile(r'\bLuLu\b',                  re.I), 'Shopping',  'LuLu'),
+    (re.compile(r'\bNoon\s*Grocery\b',        re.I), 'Shopping',  'Noon Grocery'),
+    # Transport (generic Careem after food)
+    (re.compile(r'\bUber\b',                  re.I), 'Transport', 'Uber'),
+    (re.compile(r'\bCareem\b',                re.I), 'Transport', 'Careem'),
+    (re.compile(r'\bRTA\b',                   re.I), 'Transport', 'RTA'),
+    # Fun / entertainment
+    (re.compile(r'\b(cinema|movie|ticket|concert|event|VOX|Reel|Novo)\b', re.I), 'Fun', None),
+    # BNPL → Bills
+    (re.compile(r'\bTabby\b',                 re.I), 'Bills',     'Tabby'),
+    (re.compile(r'\bTamara\b',                re.I), 'Bills',     'Tamara'),
+    # Apple Pay / generic
+    (re.compile(r'\bApple\s*Pay\b',           re.I), 'Shopping',  'Apple Pay'),
+]
+
+def _sender_domain(sender: str) -> str:
+    m = re.search(r'@([\w.-]+)', sender)
+    return m.group(1).lower() if m else ''
+
+def _parse_mail_date(date_str: str) -> str:
+    """AppleScript date string → YYYY-MM-DD, '' on failure."""
+    for fmt in (
+        '%A, %B %d, %Y at %I:%M:%S %p',
+        '%A, %d %B %Y at %I:%M:%S %p',
+        '%B %d, %Y at %I:%M:%S %p',
+        '%d %B %Y at %H:%M:%S',
+        '%d %B %Y %H:%M:%S',
+        '%Y-%m-%d',
+    ):
+        try:
+            return datetime.strptime(date_str[:40].strip(), fmt).strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+    return ''
 
 def _parse_date(text: str):
     today = date.today()
@@ -367,125 +518,210 @@ def _parse_date(text: str):
     future = [d for d in candidates if d >= today]
     return str(min(future) if future else max(candidates))
 
-def _parse_amount(text: str):
+def _parse_amount_currency(text: str):
+    """Returns (amount_float, currency_str) or (None, None)."""
     m = AMOUNT_RE.search(text)
-    if m:
-        raw = m.group(1) or m.group(2)
-        try:
-            return round(float(raw), 2)
-        except ValueError:
-            pass
-    return None
-
-def read_gmail_subs(days_back: int = GMAIL_DAYS_BACK) -> list:
-    """
-    Scans Gmail for subscription billing emails.
-    Returns [{"id","name","cost","renewal","source"}]
-    """
-    pw = gmail_pass()
-    if not pw:
-        log('Gmail: no App Password found — skipping subscription scan')
-        log('       Create ~/.openclaw/gmail_app_password with your 16-char App Password')
-        return []
-
-    found = {}   # name_lower → sub dict
+    if not m:
+        return None, None
+    raw = m.group(1) or m.group(2)
     try:
-        log('Gmail: connecting…')
-        mail = imaplib.IMAP4_SSL(GMAIL_HOST)
-        mail.login(GMAIL_USER, pw)
-        mail.select('inbox')
+        amount = round(float(raw), 2)
+    except ValueError:
+        return None, None
+    cm = CURRENCY_RE.search(text[:m.start() + len(m.group()) + 5])
+    currency = 'AED'
+    if cm:
+        sym = cm.group(1).upper()
+        currency = 'AED' if sym == 'AED' else 'USD'
+    return amount, currency
 
-        since = (datetime.now() - timedelta(days=days_back)).strftime('%d-%b-%Y')
-        seen_uids: set = set()
-
-        for domain, service in KNOWN_SUBS.items():
-            _, data = mail.search(None, f'(SINCE {since} FROM "{domain}")')
-            ids = data[0].split()
-            if not ids:
-                continue
-            for uid_b in ids[-15:]:   # cap per sender
-                if uid_b in seen_uids:
-                    continue
-                seen_uids.add(uid_b)
-                _, raw = mail.fetch(uid_b, '(RFC822)')
-                if not raw or not raw[0]:
-                    continue
-                msg     = email.message_from_bytes(raw[0][1])
-                subject = _decode_hdr(msg.get('Subject', ''))
-                if not BILLING_KW.search(subject):
-                    continue
-                body     = _email_text(msg)
-                combined = subject + '\n' + body
-                renewal  = _parse_date(combined)
-                amount   = _parse_amount(combined)
-                key      = service.lower()
-                if key not in found or (renewal and renewal > found[key].get('renewal', '')):
-                    found[key] = {
-                        'id':      'sub_' + hashlib.md5(service.encode()).hexdigest()[:8],
-                        'name':    service,
-                        'cost':    str(amount) if amount else found.get(key, {}).get('cost', ''),
-                        'renewal': renewal or found.get(key, {}).get('renewal', ''),
-                        'source':  'gmail',
-                    }
-
-        mail.logout()
-        log(f'Gmail: found {len(found)} subscription(s)')
-    except imaplib.IMAP4.error as e:
-        log(f'Gmail IMAP error: {e}')
-        log('       Check your App Password in ~/.openclaw/gmail_app_password')
+def read_mail_emails() -> tuple:
+    """
+    Scans the last 100 emails from iCloud and Gmail INBOX via AppleScript.
+    Returns (subs_list, transactions_list, important_emails_list).
+      transactions:    [{id, merchant, category, amount, currency, date, subject}]
+      subs:            [{id, name, cost, currency, renewal, source}]
+      important_emails:[{id, subject, sender, date, type}]  — capped at 10
+    """
+    try:
+        r = subprocess.run(
+            ['osascript', '-e', MAIL_AS],
+            capture_output=True, text=True, timeout=120,
+        )
+        if r.returncode != 0:
+            log(f'Mail AppleScript error: {r.stderr.strip()[:200]}')
+            return [], [], []
+        out = r.stdout.strip()
+        if not out:
+            log('Mail: no messages returned (check Mail.app access in Privacy settings)')
+            return [], [], []
+    except subprocess.TimeoutExpired:
+        log('Mail AppleScript timed out after 120s — skipping mail scan')
+        return [], [], []
     except Exception as e:
-        log(f'Gmail scan failed: {e}')
+        log(f'Mail read failed: {e}')
+        return [], [], []
 
-    return list(found.values())
+    subs: dict         = {}   # service_lower → sub dict
+    transactions: list = []
+    important_emails: list = []
+    seen_txn: set = set()
+    seen_imp: set = set()
+
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split('|||', 2)
+        if len(parts) != 3:
+            continue
+        sender, subject, date_str = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        if not subject:
+            continue
+
+        # Drop promotions / noise
+        if SKIP_RE.search(subject):
+            continue
+
+        combined      = sender + ' ' + subject
+        received_date = _parse_mail_date(date_str)
+        amount, currency = _parse_amount_currency(subject)
+
+        # ── IMPORTANT ─────────────────────────────────────────────
+        if IMP_RE.search(subject) and len(important_emails) < 10:
+            imp_type = 'notice'
+            for pat, itype in IMP_TYPE_RE:
+                if pat.search(subject):
+                    imp_type = itype
+                    break
+            imp_id = 'imp_' + hashlib.md5(f'{sender}{subject}'.encode()).hexdigest()[:8]
+            if imp_id not in seen_imp:
+                seen_imp.add(imp_id)
+                important_emails.append({
+                    'id':      imp_id,
+                    'subject': subject[:150],
+                    'sender':  sender[:100],
+                    'date':    received_date,
+                    'type':    imp_type,
+                })
+
+        # ── TRANSACTION ───────────────────────────────────────────
+        if TXN_KW.search(subject) or (amount is not None and TXN_KW.search(combined)):
+            merchant  = None
+            category  = 'Other'
+            for pat, cat, name in TXN_CAT_RULES:
+                if pat.search(combined):
+                    category = cat
+                    merchant = name
+                    break
+            # If no specific merchant matched, derive one from sender domain
+            if merchant is None:
+                domain   = _sender_domain(sender)
+                merchant = domain.split('.')[0].title() if domain else 'Unknown'
+
+            txn_id = 'txn_' + hashlib.md5(f'{sender}{subject}{date_str}'.encode()).hexdigest()[:8]
+            if txn_id not in seen_txn:
+                seen_txn.add(txn_id)
+                transactions.append({
+                    'id':       txn_id,
+                    'merchant': merchant,
+                    'category': category,
+                    'amount':   amount,
+                    'currency': currency or 'AED',
+                    'date':     received_date,
+                    'subject':  subject[:120],
+                })
+
+        # ── SUBSCRIPTION ──────────────────────────────────────────
+        if not SUB_KW.search(subject):
+            continue
+
+        service = None
+        domain  = _sender_domain(sender)
+        for d, name in KNOWN_SUBS.items():
+            if domain.endswith(d):
+                service = name
+                break
+        if service is None:
+            subj_lower = subject.lower()
+            for kw, name in SUB_KEYWORDS.items():
+                if kw in subj_lower:
+                    service = name
+                    break
+        if service is None:
+            continue
+
+        renewal  = _parse_date(subject + ' ' + date_str)
+        key      = service.lower()
+        existing = subs.get(key, {})
+        if key not in subs or (renewal and renewal > existing.get('renewal', '')):
+            subs[key] = {
+                'id':       'sub_' + hashlib.md5(service.encode()).hexdigest()[:8],
+                'name':     service,
+                'cost':     str(amount) if amount is not None else existing.get('cost', ''),
+                'currency': currency if amount is not None else existing.get('currency', 'AED'),
+                'renewal':  renewal or existing.get('renewal', ''),
+                'source':   'mail',
+            }
+        elif amount is not None and not existing.get('cost'):
+            subs[key]['cost']     = str(amount)
+            subs[key]['currency'] = currency
+
+    log(f'Mail: {len(subs)} sub(s), {len(transactions)} transaction(s), {len(important_emails)} important')
+    return list(subs.values()), transactions, important_emails
 
 # ── MERGE LOGIC ───────────────────────────────────────────────────
 
 def merge_subs(existing: list, fresh: list) -> list:
-    """Upsert fresh Gmail subs into existing list. Preserves manual entries."""
+    """Upsert fresh Mail subs into existing list. Preserves manual entries."""
     by_name = {s['name'].lower(): s for s in existing}
     for f in fresh:
         key = f['name'].lower()
         if key in by_name:
             old = by_name[key]
-            # Only update renewal if fresher date found
             if f.get('renewal') and f['renewal'] > old.get('renewal', ''):
                 old['renewal'] = f['renewal']
             if f.get('cost'):
                 old['cost'] = f['cost']
-            old['source'] = 'gmail'
+            if f.get('currency'):
+                old['currency'] = f['currency']
+            old['source'] = 'mail'
         else:
             by_name[key] = f
     return list(by_name.values())
 
-def build_new_state(old: dict, reminders: list, cal_events: dict, subs: list) -> dict:
+def build_new_state(old: dict, reminders: list, cal_events: dict,
+                    subs: list, transactions: list, important_emails: list) -> dict:
     """
     Merge fresh data into the existing state.
-    - todos  : replaced wholesale from Reminders
-    - events : future events replaced from Calendar; past events preserved
-    - subs   : upserted from Gmail
-    - spend  : untouched (manual)
+    - todos           : replaced from Reminders
+    - events          : future events replaced from Calendar; past preserved
+    - subs            : upserted from Mail
+    - transactions    : replaced from Mail scan
+    - important_emails: replaced from Mail scan (last 10)
+    - spend           : untouched (manual)
     """
     today_str = date.today().isoformat()
 
-    # Keep past calendar events, replace future ones
     old_events = old.get('events', {})
     if not isinstance(old_events, dict):
         old_events = {}
-    past_events = {k: v for k, v in old_events.items() if k < today_str}
+    past_events   = {k: v for k, v in old_events.items() if k < today_str}
     merged_events = {**past_events, **cal_events}
 
-    # Merge subs
-    old_subs = old.get('subs', [])
+    old_subs    = old.get('subs', [])
     if not isinstance(old_subs, list):
         old_subs = []
     merged_subs = merge_subs(old_subs, subs)
 
     return {
-        'todos':   reminders,
-        'events':  merged_events,
-        'subs':    merged_subs,
-        'spend':   old.get('spend', {}),
-        'updated': now_iso(),
+        'todos':           reminders,
+        'events':          merged_events,
+        'subs':            merged_subs,
+        'transactions':    transactions,
+        'important_emails': important_emails,
+        'spend':           old.get('spend', {}),
+        'updated':         now_iso(),
         'sync_info': {
             'source':    'hex-sync.py',
             'version':   VERSION,
@@ -493,6 +729,8 @@ def build_new_state(old: dict, reminders: list, cal_events: dict, subs: list) ->
             'reminders': len(reminders),
             'events':    sum(len(v) for v in cal_events.values()),
             'subs':      len(merged_subs),
+            'txns':      len(transactions),
+            'important': len(important_emails),
         },
     }
 
@@ -513,9 +751,9 @@ def run_sync(dry_run: bool = False) -> bool:
     total_evs  = sum(len(v) for v in cal_events.values())
     log(f'  {total_evs} event(s) across {len(cal_events)} day(s)')
 
-    # 3. Gmail
-    log('Scanning Gmail for subscriptions…')
-    gmail_subs = read_gmail_subs()
+    # 3. Mac Mail
+    log('Scanning Mac Mail (iCloud + Gmail)…')
+    mail_subs, mail_txns, mail_imp = read_mail_emails()
 
     # 4. Fetch current data.json
     token = gh_token()
@@ -532,7 +770,7 @@ def run_sync(dry_run: bool = False) -> bool:
         return False
 
     # 5. Build new state
-    new_data = build_new_state(old_data, reminders, cal_events, gmail_subs)
+    new_data = build_new_state(old_data, reminders, cal_events, mail_subs, mail_txns, mail_imp)
 
     if dry_run:
         log('DRY RUN — not writing to GitHub')
@@ -545,16 +783,19 @@ def run_sync(dry_run: bool = False) -> bool:
     for attempt in range(retries):
         try:
             new_sha = gh_put(new_data, sha,
-                             f'hex-sync: {len(reminders)} todos, {total_evs} events, {len(gmail_subs)} subs')
+                             f'hex-sync: {len(reminders)} todos, {total_evs} events, '
+                             f'{len(mail_subs)} subs, {len(mail_txns)} txns, {len(mail_imp)} imp')
             log(f'Done. SHA={new_sha[:8]}…')
-            log(f'  todos={len(reminders)} events={total_evs} subs={len(new_data["subs"])}')
+            log(f'  todos={len(reminders)} events={total_evs} subs={len(new_data["subs"])} '
+                f'txns={len(mail_txns)} imp={len(mail_imp)}')
             return True
         except RuntimeError as e:
             if 'SHA conflict' in str(e) and attempt < retries - 1:
                 log('SHA conflict — re-fetching and retrying…')
                 try:
                     old_data, sha = gh_get()
-                    new_data = build_new_state(old_data, reminders, cal_events, gmail_subs)
+                    new_data = build_new_state(old_data, reminders, cal_events,
+                                               mail_subs, mail_txns, mail_imp)
                 except Exception as fe:
                     log(f'Re-fetch failed: {fe}')
                     return False
@@ -600,7 +841,6 @@ def main():
 
     log(f'HEX OS sync daemon started (interval={SYNC_INTERVAL}s)')
     log(f'Token file : {GH_TOKEN_FILE}')
-    log(f'Gmail file : {GMAIL_PASS_FILE}')
     log('Press Ctrl+C to stop.\n')
 
     while not _stop:
