@@ -1,78 +1,5 @@
 {
-  "todos": [
-    {
-      "id": "rem_b7b5abfde251",
-      "text": "Commando energy drink  one packet 6 bottles",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_a8d36928bfee",
-      "text": "Bento Squid Flavour",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_8586ef4f4a88",
-      "text": "Dried Fruits",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_088cf8cde7d8",
-      "text": "Thai Sausage packet 12 pkt",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_814004531b6d",
-      "text": "Wild Assam Tea",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_feefcb461f43",
-      "text": "Oolong Tea Bak Raw Thai",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_f2cdfb9a8ec3",
-      "text": "Thai Cheese Sausage",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_4f0ada8a8af3",
-      "text": "Snacks",
-      "priority": "mid",
-      "done": false,
-      "list": "Things have to buy in thailand",
-      "source": "reminders"
-    },
-    {
-      "id": "rem_44861f686aa8",
-      "text": "Apply for Thai Visa' in my To Do List category",
-      "priority": "mid",
-      "done": false,
-      "list": "Groceries list",
-      "source": "reminders"
-    }
-  ],
+  "todos": [],
   "events": {
     "2026-04-30": [
       {
@@ -135,12 +62,12 @@
   "transactions": [],
   "important_emails": [],
   "spend": {},
-  "updated": "2026-04-27T19:43:00.806Z",
+  "updated": "2026-04-27T19:44:10.049Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-27T19:43:00.806Z",
-    "reminders": 9,
+    "synced_at": "2026-04-27T19:44:10.049Z",
+    "reminders": 0,
     "events": 5,
     "subs": 1,
     "txns": 0,
