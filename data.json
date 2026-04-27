@@ -14,11 +14,11 @@
   "transactions": [],
   "important_emails": [],
   "spend": {},
-  "updated": "2026-04-27T20:08:03.370Z",
+  "updated": "2026-04-27T20:08:08.694Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-27T20:08:03.370Z",
+    "synced_at": "2026-04-27T20:08:08.694Z",
     "reminders": 0,
     "events": 0,
     "subs": 1,
