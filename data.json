@@ -170,11 +170,11 @@
     }
   ],
   "spend": {},
-  "updated": "2026-04-27T18:36:27.274Z",
+  "updated": "2026-04-27T18:37:05.872Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-27T18:36:27.274Z",
+    "synced_at": "2026-04-27T18:37:05.872Z",
     "reminders": 0,
     "events": 5,
     "subs": 1,
