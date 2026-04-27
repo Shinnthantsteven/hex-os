@@ -1,6 +1,127 @@
 {
-  "todos": [],
-  "events": {},
+  "todos": [
+    {
+      "id": "rem_b7b5abfde251",
+      "text": "Commando energy drink  one packet 6 bottles",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_a8d36928bfee",
+      "text": "Bento Squid Flavour",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_8586ef4f4a88",
+      "text": "Dried Fruits",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_088cf8cde7d8",
+      "text": "Thai Sausage packet 12 pkt",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_814004531b6d",
+      "text": "Wild Assam Tea",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_feefcb461f43",
+      "text": "Oolong Tea Bak Raw Thai",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_f2cdfb9a8ec3",
+      "text": "Thai Cheese Sausage",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_4f0ada8a8af3",
+      "text": "Snacks",
+      "priority": "mid",
+      "done": false,
+      "list": "Things have to buy in thailand",
+      "source": "reminders"
+    },
+    {
+      "id": "rem_44861f686aa8",
+      "text": "Apply for Thai Visa' in my To Do List category",
+      "priority": "mid",
+      "done": false,
+      "list": "Groceries list",
+      "source": "reminders"
+    }
+  ],
+  "events": {
+    "2026-04-30": [
+      {
+        "id": "cal_D985BF4F-CD10-4DB1-90AC-CA0EE6CAD60E",
+        "name": "Apply for Thai Visa' in my To Do List category",
+        "start": "2026-04-29T20:00:00.000Z",
+        "time": "",
+        "allDay": true,
+        "calendar": "Scheduled Reminders",
+        "source": "calendar"
+      },
+      {
+        "id": "cal_67387BE3-EC58-4C87-80CC-A49A94D1A1B6",
+        "name": "Apply for Thai Visa' in my To Do List Category list",
+        "start": "2026-04-29T20:00:00.000Z",
+        "time": "",
+        "allDay": true,
+        "calendar": "Scheduled Reminders",
+        "source": "calendar"
+      },
+      {
+        "id": "cal_E48630B9-DCF0-468B-BD69-7CE3F74E3188",
+        "name": "Apply for Thai Visa' in my To Do List Category list",
+        "start": "2026-04-29T20:00:00.000Z",
+        "time": "",
+        "allDay": true,
+        "calendar": "Scheduled Reminders",
+        "source": "calendar"
+      },
+      {
+        "id": "cal_6AD4CD25-E7FA-4F68-B849-AD832DD12387",
+        "name": "For Medical Check up for stomach",
+        "start": "2026-04-30T02:00:00.000Z",
+        "time": "06:00",
+        "allDay": false,
+        "calendar": "Home",
+        "source": "calendar"
+      },
+      {
+        "id": "cal_0A21C932-271C-4D22-B889-3BFF5E453A5B",
+        "name": "Apply for Thai E-Visa",
+        "start": "2026-04-30T05:00:00.000Z",
+        "time": "09:00",
+        "allDay": false,
+        "calendar": "shinnthantsteven@gmail.com",
+        "source": "calendar"
+      }
+    ]
+  },
   "subs": [
     {
       "id": "sub_9f6290f4",
@@ -14,13 +135,13 @@
   "transactions": [],
   "important_emails": [],
   "spend": {},
-  "updated": "2026-04-27T19:41:20.519Z",
+  "updated": "2026-04-27T19:43:00.806Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-27T19:41:20.519Z",
-    "reminders": 0,
-    "events": 0,
+    "synced_at": "2026-04-27T19:43:00.806Z",
+    "reminders": 9,
+    "events": 5,
     "subs": 1,
     "txns": 0,
     "important": 0
