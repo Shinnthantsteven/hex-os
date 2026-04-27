@@ -62,11 +62,11 @@
   "transactions": [],
   "important_emails": [],
   "spend": {},
-  "updated": "2026-04-27T18:53:40.202Z",
+  "updated": "2026-04-27T18:54:06.962Z",
   "sync_info": {
     "source": "hex-sync.py",
     "version": "1.0",
-    "synced_at": "2026-04-27T18:53:40.202Z",
+    "synced_at": "2026-04-27T18:54:06.962Z",
     "reminders": 0,
     "events": 5,
     "subs": 1,
